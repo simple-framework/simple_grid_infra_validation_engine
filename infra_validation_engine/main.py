@@ -11,10 +11,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--filename')
     parser.add_argument('--config_master_host')
+    parser.add_argument('-s', '--stages')
     args = parser.parse_args()
     return {
         'filename': args.filename,
-        'config_master_host': args.config_master_host
+        'config_master_host': args.config_master_host,
+        'stages': args.stages
     }
 
 
@@ -25,15 +27,17 @@ def test_cm_git_install(cm):
         return False
 
 
-def execution_pipeline(config_master_host, lightweight_component_hosts):
-    install_stage = Install(config_master_host, lightweight_component_hosts)
-    install_stage.execute()
+def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
+    if "install" in stages:
+        install_stage = Install(config_master_host, lightweight_component_hosts)
+        install_stage.execute()
 
 
 if __name__ == "__main__":
     args = parse_args()
     site_level_config_file = args['filename']
     config_master_host = args['config_master_host']
+    stages = args['stages'].split(',')
     if config_master_host is not None:
         config_master_host = testinfra.get_host(config_master_host)
     else:
@@ -58,4 +62,4 @@ if __name__ == "__main__":
         lc_host['host'] = testinfra.get_host(lc_host['host'])
         git_test = test_cm_git_install(lc_host['host'])
         print "Git Test on {fqdn}: {git_test}".format(fqdn=lc_host['fqdn'], git_test=git_test)
-    execution_pipeline(config_master_host, lc_hosts)
+    execution_pipeline(config_master_host, lc_hosts, stages)
