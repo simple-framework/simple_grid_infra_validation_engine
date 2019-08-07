@@ -44,5 +44,5 @@ if __name__ == "__main__":
     print(lc_hosts)
     for lc_host in lc_hosts:
         lc_host['host'] = testinfra.get_host(lc_host['host'])
-        test_cm_git_install(lc_host['host'])
-    print(lc_hosts)
+        git_test = test_cm_git_install(lc_host['host'])
+        print "Git Test on {fqdn}: {git_test}".format(fqdn=lc_host['fqdn'], git_test=git_test)
