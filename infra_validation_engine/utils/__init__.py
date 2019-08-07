@@ -1,10 +1,10 @@
 def get_lightweight_component_hosts(augmented_site_level_config):
     site_infrastructure = augmented_site_level_config['site_infrastructure']
-    output = {}
+    output = []
     for node in site_infrastructure:
-        output[node['ip_address']] = "ssh://${fqdn}".format(fqdn=node['fqdn'])
+        node['host'] = "ssh://{fqdn}".format(fqdn=node['fqdn'])
+        output.append(node)
     return output
-
 
 def get_augmented_site_level_config_file(augmented_site_level_config):
     pass

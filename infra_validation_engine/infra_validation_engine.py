@@ -42,3 +42,7 @@ if __name__ == "__main__":
     lc_hosts = get_lightweight_component_hosts(augmented_site_level_config)
     print("*****")
     print(lc_hosts)
+    for lc_host in lc_hosts:
+        lc_host['host'] = testinfra.get_host(lc_host['host'])
+        test_cm_git_install(lc_host['host'])
+    print(lc_hosts)
