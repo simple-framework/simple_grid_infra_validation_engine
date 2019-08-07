@@ -1,6 +1,6 @@
-from infra_validation_engine.core import InfraTest
-from infra_validation_engine.utils.constants import Constants
-from infra_validation_engine.utils.exceptions import ComponentNotInstalledError
+from core import InfraTest
+from utils.constants import Constants
+from utils.exceptions import ComponentNotInstalledError
 
 
 class YamlCompilerConstants(Constants):
@@ -11,12 +11,13 @@ class YamlCompilerConstants(Constants):
 
 class YamlCompilerInstallationTest(InfraTest):
 
-    def __init__(self, host, stage):
-        InfraTest.__init__(self, host)
-        self.stage = stage
+    def __init__(self, host, fqdn):
+        InfraTest.__init__(self, "Yaml Compiler Installation Test",
+                           "Check if YAML compiler was installed on {fqdn}".format(fqdn=fqdn),
+                           host, fqdn)
 
     def run(self):
-        self.host.directory(YamlCompilerConstants.YAML_COMPILER_INSTALLATION_DIR)
+        return self.host.file(YamlCompilerConstants.YAML_COMPILER_INSTALLATION_DIR).is_directory
 
     def fail(self):
         raise ComponentNotInstalledError("Could not find the simple_grid_yaml_compiler directory at {path}".format(

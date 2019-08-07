@@ -3,6 +3,7 @@ import testinfra
 import simple_grid_yaml_compiler
 import yaml
 
+from stages.install import Install
 from utils import get_lightweight_component_hosts
 
 
@@ -24,6 +25,11 @@ def test_cm_git_install(cm):
         return False
 
 
+def execution_pipeline(config_master_host, lightweight_component_hosts):
+    install_stage = Install(config_master_host, lightweight_component_hosts)
+    install_stage.execute()
+
+
 if __name__ == "__main__":
     args = parse_args()
     site_level_config_file = args['filename']
@@ -33,7 +39,13 @@ if __name__ == "__main__":
     else:
         config_master_host = testinfra.get_host('local://')
 
-    output = test_cm_git_install(config_master_host)
+    config_master_host = {
+        'fqdn': 'localhost',
+        'host': config_master_host,
+        'ip_address': '127.0.0.1'
+    }
+
+    # output = test_cm_git_install(config_master_host['host'])
 
     simple_grid_yaml_compiler.execute_compiler(open(site_level_config_file, 'r'),
                                                open('./.temp/augmented_site_level_config_file.yaml', 'w'),
@@ -46,3 +58,4 @@ if __name__ == "__main__":
         lc_host['host'] = testinfra.get_host(lc_host['host'])
         git_test = test_cm_git_install(lc_host['host'])
         print "Git Test on {fqdn}: {git_test}".format(fqdn=lc_host['fqdn'], git_test=git_test)
+    execution_pipeline(config_master_host, lc_hosts)
