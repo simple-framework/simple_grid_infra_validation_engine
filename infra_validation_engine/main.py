@@ -1,6 +1,6 @@
 import argparse
 import testinfra
-import simple_grid_yaml_compiler
+import simple_grid_yaml_compiler.yaml_compiler as simple_grid_yaml_compiler
 import yaml
 
 from stages.install import Install

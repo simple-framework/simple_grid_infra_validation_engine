@@ -4,7 +4,7 @@ from utils.exceptions import ComponentNotInstalledError
 
 
 class YamlCompilerConstants(Constants):
-    YAML_COMPILER_INSTALLATION_DIR = "{SIMPLE_CONFIG_DIR}/simple_grid_yaml_compiler".format(
+    YAML_COMPILER_INSTALLATION_DIR = "{SIMPLE_CONFIG_DIR}/yaml_compiler".format(
         SIMPLE_CONFIG_DIR=Constants.SIMPLE_CONFIG_DIR
     )
 
