@@ -3,8 +3,8 @@ from utils.constants import Constants
 from utils.exceptions import DirectoryNotFoundError
 
 class ConfigMasterSimpleGridFolderTest(InfraTest):
-  def init(self, host, fqdn):
-    InfraTest.init(self,
+  def __init__(self, host, fqdn):
+    InfraTest.__init__(self,
       "SIMPLE GRID Folder Test",
       "Check if {dir} directory is present on {fqdn}".format(dir=Constants.SIMPLE_CONFIG_DIR, fqdn=fqdn),
       host,
