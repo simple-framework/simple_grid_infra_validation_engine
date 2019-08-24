@@ -1,4 +1,5 @@
 from components.yaml_compiler import YamlCompilerInstallationTest
+from nodes.config_master import ConfigMasterSimpleGridFolderTest
 from core import Stage
 
 
@@ -9,6 +10,4 @@ class Install(Stage):
 
     def register_tests(self):
         self.infra_tests.append(YamlCompilerInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']))
-
-
-
+        self.infra_tests.append(ConfigMasterSimpleGridFolderTest(self.config_master_host['host'], self.config_master_host['fqdn']))
