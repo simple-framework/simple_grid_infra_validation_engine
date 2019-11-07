@@ -87,3 +87,21 @@ class ConfigMasterSiteLevelConfigFileTest(InfraTest):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SITE_LEVEL_CONFIG_FILE, fqdn=self.fqdn)
 
         raise FileNotCreatedError(err_msg)
+
+class ConfigMasterFileServerConfigFileTest(InfraTest):
+    def __init__(self, host, fqdn):
+        InfraTest.__init__(self,
+        "Config Master - FileServer Config File Test",
+        "Check if {file} is present on {fqdn}".format(file=Constants.FILESERVER_CONFIG_FILE, fqdn=fqdn),
+        host,
+        fqdn)
+
+    def run(self):
+        cmd = self.host.run("test -f {file}".format(file=Constants.FILESERVER_CONFIG_FILE))
+
+        return cmd.rc == 0
+
+    def fail(self):
+        err_msg = "File {file} is not present on {fqdn}".format(file=Constants.FILESERVER_CONFIG_FILE, fqdn=self.fqdn)
+
+        raise FileNotCreatedError(err_msg)
