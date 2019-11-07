@@ -123,3 +123,21 @@ class ConfigMasterSSHHostKeyFileTest(InfraTest):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SSH_HOST_KEY, fqdn=self.fqdn)
 
         raise FileNotCreatedError(err_msg)
+
+class ConfigMasterSiteManifestFileTest(InfraTest):
+    def __init__(self, host, fqdn):
+        InfraTest.__init__(self,
+        "Config Master - FileServer Config File Test",
+        "Check if {file} is present on {fqdn}".format(file=Constants.SITE_MANIFEST, fqdn=fqdn),
+        host,
+        fqdn)
+
+    def run(self):
+        cmd = self.host.run("test -f {file}".format(file=Constants.SITE_MANIFEST))
+
+        return cmd.rc == 0
+
+    def fail(self):
+        err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SITE_MANIFEST, fqdn=self.fqdn)
+
+        raise FileNotCreatedError(err_msg)

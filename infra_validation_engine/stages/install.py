@@ -1,6 +1,7 @@
 from components.yaml_compiler import YamlCompilerInstallationTest
 from nodes.config_master import (ConfigMasterSimpleGridFolderTest, ConfigMasterGitInstalledTest, ConfigMasterDockerInstalledTest, ConfigMasterBoltInstalledTest,
-                                 ConfigMasterSiteLevelConfigFileTest, ConfigMasterFileServerConfigFileTest, ConfigMasterSSHHostKeyFileTest)
+                                 ConfigMasterSiteLevelConfigFileTest, ConfigMasterFileServerConfigFileTest, ConfigMasterSSHHostKeyFileTest,
+                                 ConfigMasterSiteManifestFileTest)
 from core import Stage
 
 
@@ -18,5 +19,6 @@ class Install(Stage):
             ConfigMasterBoltInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             ConfigMasterSiteLevelConfigFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             ConfigMasterFileServerConfigFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-            ConfigMasterSSHHostKeyFileTest(self.config_master_host['host'], self.config_master_host['fqdn'])
+            ConfigMasterSSHHostKeyFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            ConfigMasterSiteManifestFileTest(self.config_master_host['host'], self.config_master_host['fqdn'])
         ])
