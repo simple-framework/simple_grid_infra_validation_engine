@@ -127,7 +127,7 @@ class ConfigMasterSSHHostKeyFileTest(InfraTest):
 class ConfigMasterSiteManifestFileTest(InfraTest):
     def __init__(self, host, fqdn):
         InfraTest.__init__(self,
-        "Config Master - FileServer Config File Test",
+        "Config Master - Site Manifest File Test",
         "Check if {file} is present on {fqdn}".format(file=Constants.SITE_MANIFEST, fqdn=fqdn),
         host,
         fqdn)
