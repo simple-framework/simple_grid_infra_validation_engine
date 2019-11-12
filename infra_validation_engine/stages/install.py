@@ -2,7 +2,7 @@ from components.yaml_compiler import YamlCompilerInstallationTest
 from nodes.config_master import (ConfigMasterSimpleGridFolderTest, ConfigMasterGitInstalledTest, ConfigMasterDockerInstalledTest, ConfigMasterBoltInstalledTest,
                                  ConfigMasterSiteLevelConfigFileTest, ConfigMasterFileServerConfigFileTest, ConfigMasterSSHHostKeyFileTest,
                                  ConfigMasterSiteManifestFileTest)
-from nodes.lightweight_component import LightweightComponentPuppetAgentUpdatedTest
+from nodes.lightweight_component import LightweightComponentPuppetAgentUpdatedTest, LightweightComponentHostkeyTest
 from core import Stage
 
 
@@ -27,3 +27,4 @@ class Install(Stage):
         # Lightweight Component Tests
         for lc in self.lightweight_component_hosts:
             self.infra_tests.append(LightweightComponentPuppetAgentUpdatedTest(lc['host'], lc['fqdn'], self.config_master_host['fqdn']))
+            self.infra_tests.append(LightweightComponentHostkeyTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
