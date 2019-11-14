@@ -1,7 +1,7 @@
 from components.yaml_compiler import YamlCompilerInstallationTest
 from nodes.config_master import (ConfigMasterSimpleGridFolderTest, ConfigMasterGitInstalledTest, ConfigMasterDockerInstalledTest, ConfigMasterBoltInstalledTest,
                                  ConfigMasterSiteLevelConfigFileTest, ConfigMasterFileServerConfigFileTest, ConfigMasterSSHHostKeyFileTest,
-                                 ConfigMasterSiteManifestFileTest)
+                                 ConfigMasterSiteManifestFileTest, ConfigMasterConfigStageSetTest)
 from nodes.lightweight_component import LightweightComponentPuppetAgentUpdatedTest, LightweightComponentHostkeyTest
 from core import Stage
 
@@ -28,3 +28,6 @@ class Install(Stage):
         for lc in self.lightweight_component_hosts:
             self.infra_tests.append(LightweightComponentPuppetAgentUpdatedTest(lc['host'], lc['fqdn'], self.config_master_host['fqdn']))
             self.infra_tests.append(LightweightComponentHostkeyTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
+
+        # Check if stage is changed to CONFIG
+        self.infra_tests.append(ConfigMasterConfigStageSetTest(self.config_master_host['host'], self.config_master_host['fqdn']))

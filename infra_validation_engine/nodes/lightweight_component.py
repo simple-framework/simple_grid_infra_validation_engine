@@ -1,6 +1,6 @@
 from core import InfraTest
 from utils.constants import Constants
-from utils.exceptions import DirectoryNotFoundError, PackageNotInstalledError, FileNotCreatedError, FileContentsError
+from utils.exceptions import DirectoryNotFoundError, PackageNotInstalledError, FileNotCreatedError, FileContentsMismatchError
 
 class LightweightComponentPuppetAgentUpdatedTest(InfraTest):
     def __init__(self, host, fqdn, cm_fqdn):
@@ -18,7 +18,7 @@ class LightweightComponentPuppetAgentUpdatedTest(InfraTest):
     def fail(self):
         err_msg = "File {file} does not contain CM fqdn.".format(file=Constants.PUPPET_AGENT)
 
-        raise FileContentsError(err_msg)
+        raise FileContentsMismatchError(err_msg)
 
 class LightweightComponentHostkeyTest(InfraTest):
     def __init__(self, host, fqdn, cm_host):
@@ -39,4 +39,4 @@ class LightweightComponentHostkeyTest(InfraTest):
     def fail(self):
         err_msg = "File {file} does not match CM SSH hostkey or does not exist.".format(file=Constants.PUPPET_AGENT)
 
-        raise FileContentsError(err_msg)
+        raise FileContentsMismatchError(err_msg)

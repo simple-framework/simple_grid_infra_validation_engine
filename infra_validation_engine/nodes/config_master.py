@@ -1,6 +1,6 @@
 from core import InfraTest
 from utils.constants import Constants
-from utils.exceptions import DirectoryNotFoundError, PackageNotInstalledError, FileNotCreatedError
+from utils.exceptions import DirectoryNotFoundError, PackageNotInstalledError, FileNotCreatedError, FileContentsMismatchError
 
 class ConfigMasterSimpleGridFolderTest(InfraTest):
   def __init__(self, host, fqdn):
@@ -141,3 +141,24 @@ class ConfigMasterSiteManifestFileTest(InfraTest):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SITE_MANIFEST, fqdn=self.fqdn)
 
         raise FileNotCreatedError(err_msg)
+
+class ConfigMasterConfigStageSetTest(InfraTest):
+    def __init__(self, host, fqdn):
+        InfraTest.__init__(self,
+        "Config Master - Stage changed to CONFIG Test",
+        "Check if {file} is changed to 'config'".format(file=Constants.STAGE_FILE),
+        host,
+        fqdn)
+
+    def run(self):
+        file = self.host.file(Constants.STAGE_FILE)
+
+        if not file.exists:
+            return False
+
+        return file.content_string == 'config'
+
+    def fail(self):
+        err_msg = "File {file} is not present on {fqdn}".format(file=Constants.STAGE_FILE, fqdn=self.fqdn)
+
+        raise FileContentsMismatchError(err_msg)

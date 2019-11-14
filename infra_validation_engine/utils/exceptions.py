@@ -10,7 +10,7 @@ class FileNotCreatedError(Exception):
     """Raised when a file is excpected but not found"""
     pass
 
-class FileContentsError(Exception):
+class FileContentsMismatchError(Exception):
     """Raised when a file contents differ from what is expected"""
     pass
 
