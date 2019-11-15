@@ -79,9 +79,7 @@ class ConfigMasterSiteLevelConfigFileTest(InfraTest):
         fqdn)
 
     def run(self):
-        cmd = self.host.run("test -f {file}".format(file=Constants.SITE_LEVEL_CONFIG_FILE))
-
-        return cmd.rc == 0
+        return self.host.file(Constants.SITE_LEVEL_CONFIG_FILE).is_file
 
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SITE_LEVEL_CONFIG_FILE, fqdn=self.fqdn)
@@ -97,9 +95,7 @@ class ConfigMasterFileServerConfigFileTest(InfraTest):
         fqdn)
 
     def run(self):
-        cmd = self.host.run("test -f {file}".format(file=Constants.FILESERVER_CONFIG_FILE))
-
-        return cmd.rc == 0
+        return self.host.file(Constants.FILESERVER_CONFIG_FILE).is_file
 
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.FILESERVER_CONFIG_FILE, fqdn=self.fqdn)
@@ -115,9 +111,7 @@ class ConfigMasterSSHHostKeyFileTest(InfraTest):
         fqdn)
 
     def run(self):
-        cmd = self.host.run("test -f {file}".format(file=Constants.SSH_HOST_KEY))
-
-        return cmd.rc == 0
+        return self.host.file(Constants.SSH_HOST_KEY).is_file
 
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SSH_HOST_KEY, fqdn=self.fqdn)
@@ -133,9 +127,7 @@ class ConfigMasterSiteManifestFileTest(InfraTest):
         fqdn)
 
     def run(self):
-        cmd = self.host.run("test -f {file}".format(file=Constants.SITE_MANIFEST))
-
-        return cmd.rc == 0
+        return self.host.file(Constants.SITE_MANIFEST).is_file
 
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SITE_MANIFEST, fqdn=self.fqdn)
