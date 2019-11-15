@@ -3,17 +3,17 @@ from utils.constants import Constants
 from utils.exceptions import DirectoryNotFoundError, PackageNotInstalledError, FileNotCreatedError, FileContentsMismatchError
 
 class LightweightComponentPuppetAgentUpdatedTest(InfraTest):
-    def __init__(self, host, fqdn, cm_fqdn):
+    def __init__(self, host, fqdn, cm_host):
         InfraTest.__init__(self,
         "Lightweight Component - Puppet agent (puppet.conf) is updated Test",
         "Check if {file} is updated on {fqdn}".format(file=Constants.PUPPET_AGENT, fqdn=fqdn),
         host,
         fqdn)
 
-        self.cm_fqdn = cm_fqdn
+        self.cm_host = cm_host
 
     def run(self):
-        return self.host.file(Constants.PUPPET_AGENT).contains(self.cm_fqdn)
+        return self.host.file(Constants.PUPPET_AGENT).contains(self.cm_host.check_output("facter fqdn"))
 
     def fail(self):
         err_msg = "File {file} does not contain CM fqdn.".format(file=Constants.PUPPET_AGENT)
@@ -24,7 +24,7 @@ class LightweightComponentHostkeyTest(InfraTest):
     def __init__(self, host, fqdn, cm_host):
         InfraTest.__init__(self,
         "Lightweight Component - Hostkey is copied Test",
-        "Check if {file} is present on {fqdn}".format(file=Constants.PUPPET_AGENT, fqdn=fqdn),
+        "Check if {file} is present on {fqdn}".format(file=Constants.SSH_HOST_KEY, fqdn=fqdn),
         host,
         fqdn)
 
@@ -37,6 +37,6 @@ class LightweightComponentHostkeyTest(InfraTest):
         return self.cm_host.file(Constants.SSH_HOST_KEY).content_string == self.host.file(Constants.SSH_HOST_KEY).content_string
 
     def fail(self):
-        err_msg = "File {file} does not match CM SSH hostkey or does not exist.".format(file=Constants.PUPPET_AGENT)
+        err_msg = "File {file} does not match CM SSH hostkey or does not exist.".format(file=Constants.SSH_HOST_KEY)
 
         raise FileContentsMismatchError(err_msg)

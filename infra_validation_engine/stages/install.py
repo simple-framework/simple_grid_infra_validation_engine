@@ -26,7 +26,7 @@ class Install(Stage):
         ])
         # Lightweight Component Tests
         for lc in self.lightweight_component_hosts:
-            self.infra_tests.append(LightweightComponentPuppetAgentUpdatedTest(lc['host'], lc['fqdn'], self.config_master_host['fqdn']))
+            self.infra_tests.append(LightweightComponentPuppetAgentUpdatedTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
             self.infra_tests.append(LightweightComponentHostkeyTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
 
         # Check if stage is changed to CONFIG
