@@ -13,7 +13,7 @@ class LightweightComponentPuppetAgentUpdatedTest(InfraTest):
         self.cm_host = cm_host
 
     def run(self):
-        return self.host.file(Constants.PUPPET_AGENT).contains(self.cm_host.check_output("facter fqdn"))
+        return self.host.file(Constants.PUPPET_AGENT).contains(self.cm_host.check_output("hostname"))
 
     def fail(self):
         err_msg = "File {file} does not contain CM fqdn.".format(file=Constants.PUPPET_AGENT)
