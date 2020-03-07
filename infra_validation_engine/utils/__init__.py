@@ -16,6 +16,11 @@ import logging
 import testinfra
 
 
+class APIFilter(logging.Filter):
+    def filter(self, record):
+        return record.levelno == logging.API
+
+
 def get_lightweight_component_hosts(augmented_site_level_config):
     """
     Prepares a list of host_representation objects for all LCs in site level config file
@@ -43,30 +48,34 @@ def get_host_representation(fqdn, ip_address=None):
         "host": The testinfra connection for the machine
     }
     """
-
+    host_str = fqdn if fqdn == "local://" else "ssh://{fqdn}".format(fqdn=fqdn)
     return {
         "fqdn": fqdn,
-        "host_str": "ssh://{fqdn}".format(fqdn=fqdn),
+        "host_str": host_str,
         "ip_address": ip_address
     }
 
 
-def config_root_logger(verbosity):
+def config_root_logger(verbosity, mode):
     """
     Configure application logger based on verbosity level received from CLI
     Verbosity values of 0, 1, 2 correspond to log level of Warning, Info, Debug respectively
     :param verbosity: integer: 0, 1, 2
     """
     root_logger = logging.getLogger(infra_validation_engine.__name__)
-    if verbosity == 0:
-        root_logger.setLevel(logging.WARNING)
-    elif verbosity == 1:
-        root_logger.setLevel(logging.INFO)
-    elif verbosity >= 2:
-        root_logger.setLevel(logging.DEBUG)
-
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                                   datefmt='%d/%m/%Y %I:%M:%S %p')
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
+
+    if mode == 'standalone':
+        if verbosity == 0:
+            root_logger.setLevel(logging.WARNING)
+        elif verbosity == 1:
+            root_logger.setLevel(logging.INFO)
+        elif verbosity >= 2:
+            root_logger.setLevel(logging.DEBUG)
+    elif mode == 'api':
+        root_logger.setLevel(logging.API)
+        console_handler.addFilter(APIFilter())

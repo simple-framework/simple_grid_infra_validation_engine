@@ -31,7 +31,8 @@ def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
 @click.command()
 @click.option('--file', '-f',
               default='/etc/simple_grid/site_config/augmented_site_level_config_file.yaml',
-              type=click.File('r'),
+              type=click.STRING,
+              required=False,
               help="The absolute path to the augmented_site_level_config_file.yaml. "
                    "Default is /etc/simple_grid/site_config/augmented_site_level_config_file.yaml"
               )
@@ -58,7 +59,7 @@ def cli(file, config_master, mode, verbose, targets, stages):
     Execute the infra validation engine for the SIMPLE Framework and validate the configuration of CM and LC hosts stage
     by stage.
     """
-    config_root_logger(verbose)
+    config_root_logger(verbose, mode)
 
     logger.debug("config_master: {cm}".format(cm=config_master))
     logger.debug("verbosity: {val}".format(val=verbose))
@@ -69,7 +70,7 @@ def cli(file, config_master, mode, verbose, targets, stages):
     cm_host_rep = get_host_representation(config_master, '0.0.0.0')
     lc_hosts_rep = []
     all_hosts_rep = [cm_host_rep]
-    augmented_site_level_config = yaml.safe_load(file)
+    augmented_site_level_config = None
 
     if targets is not None:
         hostnames = [x.strip() for x in targets.split(',')]
@@ -77,10 +78,21 @@ def cli(file, config_master, mode, verbose, targets, stages):
     else:
         logger.debug("No targets were explicitly specified to execute the tests. Using augmented_site_level_config "
                      "instead!")
-        lc_hosts_rep = get_lightweight_component_hosts(augmented_site_level_config)
+        if file is None:
+            logger.warning("No --targets specified and no --file specified. Tests will only run on the Config Master")
+        else:
+            try:
+                with open(file, 'r') as augmented_site_level_config_file:
+                    augmented_site_level_config = yaml.safe_load(f)
+            except IOError:
+                logger.info("Could not read augmented site level config file")
+                logger.debug("Exception:", exc_info=True)
+
+        if augmented_site_level_config is not None:
+            lc_hosts_rep = get_lightweight_component_hosts(augmented_site_level_config)
 
     if len(lc_hosts_rep) == 0:
-        logger.info("No LC hosts specified")
+        logger.info("No LC hosts specified through --targets or --file")
     else:
         all_hosts_rep.extend(lc_hosts_rep)
 
@@ -90,6 +102,8 @@ def cli(file, config_master, mode, verbose, targets, stages):
     add_testinfra_host(cm_host_rep)
     for host_rep in all_hosts_rep[1:]:
         add_testinfra_host(host_rep)
+    # logger.api( "test")
+    logger.api("test")
 
 
 if __name__ == "__main__":
