@@ -10,18 +10,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+VERSION = (0, 1, 0)
 
-
-class ComponentNotInstalledError(Exception):
-    """ Raised when a framework component is not installed"""
-    pass
-
-
-class DirectoryNotFoundError(Exception):
-    """Raised when a directory is excpected but not found"""
-    pass
-
-
-class PackageNotInstalledError(Exception):
-    """Raised when a package is expected but not installed"""
-    pass
+__version__ = '.'.join(map(str, VERSION))
