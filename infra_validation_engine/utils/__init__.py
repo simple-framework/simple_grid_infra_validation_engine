@@ -67,10 +67,10 @@ def config_root_logger(verbosity, mode):
     """
     root_logger = logging.getLogger(infra_validation_engine.__name__)
     console_handler = logging.StreamHandler()
+    api_handler = logging.StreamHandler()
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                                   datefmt='%d/%m/%Y %I:%M:%S %p')
     console_handler.setFormatter(formatter)
-    root_logger.addHandler(console_handler)
 
     if mode == 'standalone':
         if verbosity == 0:
@@ -79,6 +79,8 @@ def config_root_logger(verbosity, mode):
             root_logger.setLevel(logging.INFO)
         elif verbosity >= 2:
             root_logger.setLevel(logging.DEBUG)
+        root_logger.addHandler(console_handler)
     elif mode == 'api':
         root_logger.setLevel(logging.API)
-        console_handler.addFilter(APIFilter())
+        api_handler.addFilter(APIFilter())
+        root_logger.addHandler(api_handler)
