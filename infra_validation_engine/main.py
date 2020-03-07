@@ -17,8 +17,9 @@ import click
 from stages.install import Install
 from utils import get_lightweight_component_hosts
 import logging
+from utils import config_root_logger
 
-
+logger = logging.getLogger(__name__)
 def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
     if "install" in stages:
         install_stage = Install(config_master_host, lightweight_component_hosts)
@@ -54,12 +55,13 @@ def cli(file, config_master, mode, verbose, targets, stages):
     Execute the infra validation engine for the SIMPLE Framework and validate the configuration of CM and LC hosts stage
     by stage.
     """
+    config_root_logger(verbose)
     augmented_site_level_config = yaml.safe_load(file)
-    click.echo("config_master: {cm}".format(cm=config_master))
-    click.echo("verbosity: {val}".format(val=verbose))
-    click.echo("mode: {val}".format(val=mode))
-    click.echo("targets: {val}".format(val=targets))
-    click.echo("stages: {val}".format(val=stages))
+    logger.debug("config_master: {cm}".format(cm=config_master))
+    logger.debug("verbosity: {val}".format(val=verbose))
+    logger.debug("mode: {val}".format(val=mode))
+    logger.debug("targets: {val}".format(val=targets))
+    logger.debug("stages: {val}".format(val=stages))
 
 
 if __name__ == "__main__":
