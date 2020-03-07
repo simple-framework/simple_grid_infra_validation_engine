@@ -1,6 +1,5 @@
 import argparse
 import testinfra
-import simple_grid_yaml_compiler.yaml_compiler as simple_grid_yaml_compiler
 import yaml
 
 from stages.install import Install
@@ -51,12 +50,9 @@ if __name__ == "__main__":
 
     # output = test_cm_git_install(config_master_host['host'])
 
-    simple_grid_yaml_compiler.execute_compiler(open(site_level_config_file, 'r'),
-                                               open('./.temp/augmented_site_level_config_file.yaml', 'w'),
-                                               './.temp/augmented_site_level_schema.yaml')
     augmented_site_level_config = yaml.safe_load(open('./.temp/augmented_site_level_config_file.yaml', 'r'))
     lc_hosts = get_lightweight_component_hosts(augmented_site_level_config)
-    print("*****")
+
     print(lc_hosts)
     for lc_host in lc_hosts:
         lc_host['host'] = testinfra.get_host(lc_host['host'])
