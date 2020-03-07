@@ -13,15 +13,42 @@
 
 import infra_validation_engine
 import logging
+import testinfra
 
 
 def get_lightweight_component_hosts(augmented_site_level_config):
+    """
+    Prepares a list of host_representation objects for all LCs in site level config file
+    :param augmented_site_level_config:
+    :return: A list of testinfra_hosts for LC-hosts described in site level config file.
+    """
     site_infrastructure = augmented_site_level_config['site_infrastructure']
-    output = []
-    for node in site_infrastructure:
-        node['host'] = "ssh://{fqdn}".format(fqdn=node['fqdn'])
-        output.append(node)
+    output = [get_host_representation(x['fqdn'], x['ip_address']) for x in site_infrastructure]
     return output
+
+
+def add_testinfra_host(host_rep):
+    host_rep['host'] = testinfra.get_host(host_rep['host_str'])
+
+
+def get_host_representation(fqdn, ip_address=None):
+    """
+    Creates an object that contains information of the host on which tests will be run.
+    :param fqdn: The fqdn of the machine. localhost in case of config master
+    :param ip_address: The ip address of the machine. 127.0.0.1 in case of config master
+    :return: A python dict
+    {
+        "fqdn": fqdn
+        "ip_address": ip_address,
+        "host": The testinfra connection for the machine
+    }
+    """
+
+    return {
+        "fqdn": fqdn,
+        "host_str": "ssh://{fqdn}".format(fqdn=fqdn),
+        "ip_address": ip_address
+    }
 
 
 def config_root_logger(verbosity):

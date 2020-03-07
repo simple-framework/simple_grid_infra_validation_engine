@@ -15,11 +15,13 @@ import testinfra
 import yaml
 import click
 from stages.install import Install
-from utils import get_lightweight_component_hosts
+from utils import get_lightweight_component_hosts, get_host_representation, add_testinfra_host
 import logging
 from utils import config_root_logger
 
 logger = logging.getLogger(__name__)
+
+
 def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
     if "install" in stages:
         install_stage = Install(config_master_host, lightweight_component_hosts)
@@ -34,7 +36,7 @@ def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
                    "Default is /etc/simple_grid/site_config/augmented_site_level_config_file.yaml"
               )
 @click.option('--config-master', '-c',
-              default='localhost',
+              default='local://',
               help='FQDN of the Config Master node. Default is localhost.')
 @click.option('--mode', '-m',
               type=click.Choice(['api', 'standalone'], case_sensitive=False),
@@ -45,7 +47,8 @@ def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
               help="Set verbosity level. Select between -v, -vv or -vvv.")
 @click.option('--targets', '-t',
               type=click.STRING,
-              help="A comma separated list of FQDNs of the hosts whose state should be validated")
+              help="A comma separated list of FQDNs of the Lightweight Component hosts whose state should be validated"
+                   "If --file is specified as well, tests are executed only on --targets ")
 @click.argument('stages',
                 nargs=-1,
                 type=click.Choice(['install', 'config', 'pre_deploy', 'deploy']),
@@ -56,12 +59,37 @@ def cli(file, config_master, mode, verbose, targets, stages):
     by stage.
     """
     config_root_logger(verbose)
-    augmented_site_level_config = yaml.safe_load(file)
+
     logger.debug("config_master: {cm}".format(cm=config_master))
     logger.debug("verbosity: {val}".format(val=verbose))
     logger.debug("mode: {val}".format(val=mode))
     logger.debug("targets: {val}".format(val=targets))
     logger.debug("stages: {val}".format(val=stages))
+
+    cm_host_rep = get_host_representation(config_master, '0.0.0.0')
+    lc_hosts_rep = []
+    all_hosts_rep = [cm_host_rep]
+    augmented_site_level_config = yaml.safe_load(file)
+
+    if targets is not None:
+        hostnames = [x.strip() for x in targets.split(',')]
+        lc_hosts_rep = [get_host_representation(x) for x in hostnames]
+    else:
+        logger.debug("No targets were explicitly specified to execute the tests. Using augmented_site_level_config "
+                     "instead!")
+        lc_hosts_rep = get_lightweight_component_hosts(augmented_site_level_config)
+
+    if len(lc_hosts_rep) == 0:
+        logger.info("No LC hosts specified")
+    else:
+        all_hosts_rep.extend(lc_hosts_rep)
+
+    logger.info("Infra Validation Tests will be executed on the following hosts:")
+    map(lambda x: logger.info(x['fqdn']), all_hosts_rep)
+
+    add_testinfra_host(cm_host_rep)
+    for host_rep in all_hosts_rep[1:]:
+        add_testinfra_host(host_rep)
 
 
 if __name__ == "__main__":
