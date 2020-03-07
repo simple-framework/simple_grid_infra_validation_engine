@@ -5,6 +5,9 @@ API_LOG_LEVEL = 5
 
 
 class InfraValidationEngineLogger(getLoggerClass()):
+    """
+    Overrides the default Logger class and adds the API log level
+    """
     def __init__(self, name, level=NOTSET):
         super(InfraValidationEngineLogger, self).__init__(name, level)
         addLevelName(API_LOG_LEVEL, "API")

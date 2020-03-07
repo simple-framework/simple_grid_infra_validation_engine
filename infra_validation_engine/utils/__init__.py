@@ -17,6 +17,9 @@ import testinfra
 
 
 class APIFilter(logging.Filter):
+    """
+    Filters API log level messages
+    """
     def filter(self, record):
         return record.levelno == logging.API
 
