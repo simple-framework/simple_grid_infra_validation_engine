@@ -118,7 +118,8 @@ def validate(file, config_master, mode, verbose, targets, stages):
 
     if 'install' in stages:
         install_stage = Install(cm_host_rep, lc_hosts_rep)
-        install_stage.execute()
+        exit_code = install_stage.execute()
+    exit(exit_code)
     # logger.api( "test")
     # logger.api("test")
 

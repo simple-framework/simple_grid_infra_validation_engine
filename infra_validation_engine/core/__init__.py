@@ -91,6 +91,7 @@ class Stage:
         test_name_csv = ', '.join([test.name for test in self.infra_tests])
         self.logger.info("Stage {stage} has the following tests registered: {test_name_csv}".format(stage=self.name,
                                                                                                     test_name_csv=test_name_csv))
+        exit_code = 0
         reports = []
         for test in self.infra_tests:
             self.logger.info("Running {test_name} on {node}".format(test_name=test.name, node=test.fqdn))
@@ -101,6 +102,7 @@ class Stage:
                     report['result'] = 'pass'
                 else:  # test failed
                     try:
+                        exit_code = 1
                         test.fail()
                     except Exception as ex:
                         self.logger.error("{test} failed".format(test=test.name))
@@ -109,6 +111,7 @@ class Stage:
                         report["error"] = ex.message
                         report["trace"] = traceback.format_exc()
             except Exception as ex:
+                exit_code = 1
                 self.logger.error("Could not run {test}!".format(test=test.name))
                 self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)), exc_info=True)
                 report["result"] = "exec_fail"
@@ -116,7 +119,7 @@ class Stage:
                 report["trace"] = traceback.format_exc()
             reports.append(report)
         self.logger.api(json.dumps(reports, indent=4))
-
+        return exit_code
 
 class StageType(ABCMeta):
     """
