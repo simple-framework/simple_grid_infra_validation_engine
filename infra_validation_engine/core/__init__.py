@@ -109,7 +109,7 @@ class StageType(ABCMeta):
         StageType.logger.debug("Registering Stage {name}".format(name=name))
 
 
-class TestType(ABCMeta):
+class InfraTestType(ABCMeta):
     """
     Automatically register a class with __metaclass__ = TestType in the Pool
     see: https://stackoverflow.com/a/100146
@@ -117,6 +117,6 @@ class TestType(ABCMeta):
     logger = logging.getLogger(__name__)
 
     def __init__(cls, name, bases, attrs):
-        super(TestType, cls).__init__(name, bases, attrs)
+        super(InfraTestType, cls).__init__(name, bases, attrs)
         Pool.register_test(name)
         StageType.logger.debug("Registering Test {name}".format(name=name))

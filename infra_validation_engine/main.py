@@ -10,10 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import sys
 import yaml
 import click
-
 from infra_validation_engine.core import Pool
 from stages.install import Install
 from utils import get_lightweight_component_hosts, get_host_representation, add_testinfra_host

@@ -11,35 +11,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from infra_validation_engine.core import InfraTest
+from infra_validation_engine.core import InfraTest, InfraTestType
 from infra_validation_engine.utils.constants import Constants
 from infra_validation_engine.utils.exceptions import DirectoryNotFoundError, PackageNotInstalledError
 
 
 class ConfigMasterSimpleGridFolderTest(InfraTest):
-  def __init__(self, host, fqdn):
-    InfraTest.__init__(self,
-      "Config Master - SIMPLE GRID Folder Test",
-      "Check if {dir} directory is present on {fqdn}".format(dir=Constants.SIMPLE_CONFIG_DIR, fqdn=fqdn),
-      host,
-      fqdn)
+    __metaclass__ = InfraTestType
 
-  def run(self):
-    return self.host.file(Constants.SIMPLE_CONFIG_DIR).is_directory
+    def __init__(self, host, fqdn):
+        InfraTest.__init__(self,
+                           "Config Master - SIMPLE GRID Folder Test",
+                           "Check if {dir} directory is present on {fqdn}".format(dir=Constants.SIMPLE_CONFIG_DIR, fqdn=fqdn),
+                           host,
+                           fqdn)
 
-  def fail(self):
-    err_msg = "Couldn't find the directory {dir} on {fqdn}".format(dir=Constants.SIMPLE_CONFIG_DIR, fqdn=self.fqdn)
+    def run(self):
+        return self.host.file(Constants.SIMPLE_CONFIG_DIR).is_directory
 
-    raise DirectoryNotFoundError(err_msg)
+    def fail(self):
+        err_msg = "Couldn't find the directory {dir} on {fqdn}".format(dir=Constants.SIMPLE_CONFIG_DIR, fqdn=self.fqdn)
+        raise DirectoryNotFoundError(err_msg)
 
 
 class ConfigMasterGitInstalledTest(InfraTest):
+    __metaclass__ = InfraTestType
+
     def __init__(self, host, fqdn):
         InfraTest.__init__(self,
-        "Config Master - Git Test",
-        "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.GIT_PKG_NAME, fqdn=fqdn),
-        host,
-        fqdn)
+                           "Config Master - Git Test",
+                           "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.GIT_PKG_NAME, fqdn=fqdn),
+                           host,
+                           fqdn)
 
     def run(self):
         return self.host.package(Constants.GIT_PKG_NAME).is_installed
@@ -51,12 +54,14 @@ class ConfigMasterGitInstalledTest(InfraTest):
 
 
 class ConfigMasterDockerInstalledTest(InfraTest):
+    __metaclass__ = InfraTestType
+
     def __init__(self, host, fqdn):
         InfraTest.__init__(self,
-        "Config Master - Docker Test",
-        "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.DOCKER_PKG_NAME, fqdn=fqdn),
-        host,
-        fqdn)
+                           "Config Master - Docker Test",
+                           "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.DOCKER_PKG_NAME, fqdn=fqdn),
+                           host,
+                           fqdn)
 
     def run(self):
         cmd = self.host.run("docker --version")
@@ -70,12 +75,14 @@ class ConfigMasterDockerInstalledTest(InfraTest):
 
 
 class ConfigMasterBoltInstalledTest(InfraTest):
+    __metaclass__ = InfraTestType
+
     def __init__(self, host, fqdn):
         InfraTest.__init__(self,
-        "Config Master - Bolt Test",
-        "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.BOLT_PKG_NAME, fqdn=fqdn),
-        host,
-        fqdn)
+                           "Config Master - Bolt Test",
+                           "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.BOLT_PKG_NAME, fqdn=fqdn),
+                           host,
+                           fqdn)
 
     def run(self):
         cmd = self.host.run("bolt --version")
