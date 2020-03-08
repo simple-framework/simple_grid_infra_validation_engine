@@ -29,6 +29,7 @@ def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
         install_stage = Install(config_master_host, lightweight_component_hosts)
         install_stage.execute()
 
+
 class Session:
     def __init__(self):
         self.config = {}
@@ -133,11 +134,9 @@ def stages():
     """
     Lists all available stages
     """
-    click.echo(stages)
-    click.echo("install")
-    click.echo("config")
-    click.echo("pre_deploy")
-    click.echo("deploy")
+    stages = Pool.get_all_stages()
+    for stage in stages:
+        click.echo("{stage}".format(stage=stage))
 
 
 @cli.command()
@@ -148,38 +147,6 @@ def tests():
     """
     Lists all available Infra Tests
     """
-    click.echo("This functionality is not supported yet")
-
-
-def load_pool():
-    """
-    Loads all classes related to tests and stages
-    :return:
-    """
-# if __name__ == "__main__":
-#     args = parse_args()
-#     site_level_config_file = args['filename']
-#     config_master_host = args['config_master_host']
-#     stages = args['stages'].split(',')
-#     if config_master_host is not None:
-#         config_master_host = testinfra.get_host(config_master_host)
-#     else:
-#         config_master_host = testinfra.get_host('local://')
-#
-#     config_master_host = {
-#         'fqdn': 'localhost',
-#         'host': config_master_host,
-#         'ip_address': '127.0.0.1'
-#     }
-#
-#     # output = test_cm_git_install(config_master_host['host'])
-#
-#     augmented_site_level_config = yaml.safe_load(open('./.temp/augmented_site_level_config_file.yaml', 'r'))
-#     lc_hosts = get_lightweight_component_hosts(augmented_site_level_config)
-#
-#     print(lc_hosts)
-#     for lc_host in lc_hosts:
-#         lc_host['host'] = testinfra.get_host(lc_host['host'])
-#         git_test = test_cm_git_install(lc_host['host'])
-#         print "Git Test on {fqdn}: {git_test}".format(fqdn=lc_host['fqdn'], git_test=git_test)
-#     execution_pipeline(config_master_host, lc_hosts, stages)
+    tests = Pool.get_all_tests()
+    for test in tests:
+        click.echo("{test}".format(test=test))

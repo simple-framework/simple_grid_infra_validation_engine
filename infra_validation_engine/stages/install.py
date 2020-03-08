@@ -13,10 +13,11 @@
 
 from infra_validation_engine.components.yaml_compiler import YamlCompilerInstallationTest
 from infra_validation_engine.nodes.config_master import ConfigMasterSimpleGridFolderTest, ConfigMasterGitInstalledTest, ConfigMasterDockerInstalledTest, ConfigMasterBoltInstalledTest
-from infra_validation_engine.core import Stage
+from infra_validation_engine.core import Stage, StageType
 
 
 class Install(Stage):
+    __metaclass__ = StageType
 
     def __init__(self, config_master_host, lightweight_component_hosts):
         Stage.__init__(self, "Install", config_master_host, lightweight_component_hosts)

@@ -25,17 +25,14 @@ class Pool:
     logger = logging.getLogger(__name__)
 
     @staticmethod
-    def register_test(name, test_class):
-        Pool.tests.append({
-            name: test_class
-        })
+    def register_test(name):
+        Pool.tests.append(name)
         Pool.logger.debug("Registered {test} in test pool".format(test=name))
 
     @staticmethod
-    def register_stage(name, stage_class):
-        Pool.stages.append({
-            name: stage_class
-        })
+    def register_stage(name):
+        Pool.stages.append(name)
+        Pool.logger.debug("Registered {stage} in test pool".format(stage=name))
 
     @staticmethod
     def get_all_tests():
@@ -48,7 +45,6 @@ class Pool:
 
 class InfraTest:
     __metaclass__ = ABCMeta
-    Pool.register_test(__name__, __name__)
 
     def __init__(self, name, description, host, fqdn):
         self.host = host
@@ -98,3 +94,29 @@ class Stage:
                     test.fail()
                 except Exception as ex:
                     self.logger.exception("{test} failed".format(test=test.name), exc_info=True)
+
+
+class StageType(ABCMeta):
+    """
+    Automatically register a class that has __metaclass__ = StageType in the Pool
+    see: https://stackoverflow.com/a/100146
+    """
+    logger = logging.getLogger(__name__)
+
+    def __init__(cls, name, bases, attrs):
+        super(StageType, cls).__init__(name, bases, attrs)
+        Pool.register_stage(name)
+        StageType.logger.debug("Registering Stage {name}".format(name=name))
+
+
+class TestType(ABCMeta):
+    """
+    Automatically register a class with __metaclass__ = TestType in the Pool
+    see: https://stackoverflow.com/a/100146
+    """
+    logger = logging.getLogger(__name__)
+
+    def __init__(cls, name, bases, attrs):
+        super(TestType, cls).__init__(name, bases, attrs)
+        Pool.register_test(name)
+        StageType.logger.debug("Registering Test {name}".format(name=name))

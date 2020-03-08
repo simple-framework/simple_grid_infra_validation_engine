@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from infra_validation_engine.core import InfraTest
+from infra_validation_engine.core import InfraTest, TestType
 from infra_validation_engine.utils.constants import Constants
 from infra_validation_engine.utils.exceptions import ComponentNotInstalledError
 
@@ -23,6 +23,8 @@ class YamlCompilerConstants(Constants):
 
 
 class YamlCompilerInstallationTest(InfraTest):
+    __metaclass__ = TestType
+
     def __init__(self, host, fqdn):
         InfraTest.__init__(self, "Yaml Compiler Installation Test",
                            "Check if YAML compiler was installed on {fqdn}".format(fqdn=fqdn),
