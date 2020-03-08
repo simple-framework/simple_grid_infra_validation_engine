@@ -10,10 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import json
+import traceback
 from abc import ABCMeta, abstractmethod
 import logging
-import sys
 
 
 class Pool:
@@ -60,6 +60,9 @@ class InfraTest:
     def fail(self):
         pass
 
+    def resolution(self):
+        return ""
+
 
 class Stage:
     """ Collection and Execution of InfraTests """
@@ -79,19 +82,40 @@ class Stage:
         pass
 
     def execute(self):
+        """
+        -1: test could not be executed
+        0: test pass
+        1: test failed
+        """
         self.logger.info("Execution infrastructure tests for {stage}".format(stage=self.name))
         test_name_csv = ', '.join([test.name for test in self.infra_tests])
         self.logger.info("Stage {stage} has the following tests registered: {test_name_csv}".format(stage=self.name,
-                                                                                                   test_name_csv=test_name_csv))
+                                                                                                    test_name_csv=test_name_csv))
+        reports = []
         for test in self.infra_tests:
             self.logger.info("Running {test_name} on {node}".format(test_name=test.name, node=test.fqdn))
-            if test.run():
-                self.logger.info("{test} passed!".format(test=test.name))
-            else:
-                try:
-                    test.fail()
-                except Exception as ex:
-                    self.logger.exception("{test} failed".format(test=test.name), exc_info=True)
+            report = {'name': test.name, 'description': test.description, 'result': 'fail'}
+            try:
+                if test.run():  # test_passed
+                    self.logger.info("{test} passed!".format(test=test.name))
+                    report['result'] = 'pass'
+                else:  # test failed
+                    try:
+                        test.fail()
+                    except Exception as ex:
+                        self.logger.error("{test} failed".format(test=test.name))
+                        self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)),
+                                         exc_info=True)
+                        report["error"] = ex.message
+                        report["trace"] = traceback.format_exc()
+            except Exception as ex:
+                self.logger.error("Could not run {test}!".format(test=test.name))
+                self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)), exc_info=True)
+                report["result"] = "exec_fail"
+                report["error"] = ex.message
+                report["trace"] = traceback.format_exc()
+            reports.append(report)
+        self.logger.api(json.dumps(reports, indent=4))
 
 
 class StageType(ABCMeta):
