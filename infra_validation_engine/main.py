@@ -23,12 +23,6 @@ from __version__ import __version__
 logger = logging.getLogger(__name__)
 
 
-def execution_pipeline(config_master_host, lightweight_component_hosts, stages):
-    if "install" in stages:
-        install_stage = Install(config_master_host, lightweight_component_hosts)
-        install_stage.execute()
-
-
 class Session:
     def __init__(self):
         self.config = {}

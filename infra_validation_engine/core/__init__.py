@@ -71,9 +71,7 @@ class Stage:
         self.infra_tests = list()
         self.config_master_host = config_master_host
         self.lightweight_component_hosts = lightweight_component_hosts
-        self.logger = logging.getLogger("{stage}-{name}".format(stage=Stage.__name__, name=self.name))
-        self.logger.setLevel(logging.INFO)
-        self.logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+        self.logger = logging.getLogger(__name__)
         self.register_tests()
 
     @abstractmethod
