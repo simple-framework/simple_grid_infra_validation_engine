@@ -16,8 +16,39 @@ import logging
 import sys
 
 
+class Pool:
+    """
+    Manages a list of all available infra tests and the stages
+    """
+    tests = []
+    stages = []
+    logger = logging.getLogger(__name__)
+
+    @staticmethod
+    def register_test(name, test_class):
+        Pool.tests.append({
+            name: test_class
+        })
+        Pool.logger.debug("Registered {test} in test pool".format(test=name))
+
+    @staticmethod
+    def register_stage(name, stage_class):
+        Pool.stages.append({
+            name: stage_class
+        })
+
+    @staticmethod
+    def get_all_tests():
+        return Pool.tests
+
+    @staticmethod
+    def get_all_stages():
+        return Pool.stages
+
+
 class InfraTest:
     __metaclass__ = ABCMeta
+    Pool.register_test(__name__, __name__)
 
     def __init__(self, name, description, host, fqdn):
         self.host = host

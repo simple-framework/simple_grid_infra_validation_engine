@@ -23,7 +23,6 @@ class YamlCompilerConstants(Constants):
 
 
 class YamlCompilerInstallationTest(InfraTest):
-
     def __init__(self, host, fqdn):
         InfraTest.__init__(self, "Yaml Compiler Installation Test",
                            "Check if YAML compiler was installed on {fqdn}".format(fqdn=fqdn),

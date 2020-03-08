@@ -12,7 +12,7 @@ from setuptools import setup, find_packages, Command
 
 # Package Info
 NAME = 'simple_infra_validation_engine'
-MODULE_SRC_DIR = ''
+MODULE_SRC_DIR = 'infra_validation_engine'
 DESCRIPTION = 'Infrastructure Validation Engine for the SIMPLE Framework'
 URL = 'https://github.com/simple-framework/simple_grid_infra_validation_engine '
 EMAIL = 'mayank.sharma@cern.ch'
