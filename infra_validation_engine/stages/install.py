@@ -12,11 +12,16 @@
 # limitations under the License.
 
 from infra_validation_engine.components.yaml_compiler import YamlCompilerInstallationTest
-from infra_validation_engine.nodes.config_master import (ConfigMasterSimpleGridFolderTest, ConfigMasterGitInstalledTest, ConfigMasterDockerInstalledTest, ConfigMasterBoltInstalledTest,
-                                 ConfigMasterSiteLevelConfigFileTest, ConfigMasterFileServerConfigFileTest, ConfigMasterSSHHostKeyFileTest,
-                                 ConfigMasterSiteManifestFileTest, ConfigMasterConfigStageSetTest)
-from infra_validation_engine.nodes.lightweight_component import LightweightComponentPuppetAgentUpdatedTest, LightweightComponentHostkeyTest
-from infra_validatioN_engine.core import Stage, StageType
+from infra_validation_engine.nodes.config_master import (ConfigMasterSimpleGridFolderTest, ConfigMasterGitInstalledTest,
+                                                         ConfigMasterDockerInstalledTest, ConfigMasterBoltInstalledTest,
+                                                         ConfigMasterSiteLevelConfigFileTest,
+                                                         ConfigMasterFileServerConfigFileTest,
+                                                         ConfigMasterSSHHostKeyFileTest,
+                                                         ConfigMasterSiteManifestFileTest,
+                                                         ConfigMasterConfigStageSetTest)
+from infra_validation_engine.nodes.lightweight_component import LightweightComponentPuppetAgentUpdatedTest, \
+    LightweightComponentHostkeyTest
+from infra_validation_engine.core import Stage, StageType
 
 
 class Install(Stage):
@@ -40,8 +45,11 @@ class Install(Stage):
         ])
         # Lightweight Component Tests
         for lc in self.lightweight_component_hosts:
-            self.infra_tests.append(LightweightComponentPuppetAgentUpdatedTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
-            self.infra_tests.append(LightweightComponentHostkeyTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
+            self.infra_tests.append(
+                LightweightComponentPuppetAgentUpdatedTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
+            self.infra_tests.append(
+                LightweightComponentHostkeyTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
 
         # Check if stage is changed to CONFIG
-        self.infra_tests.append(ConfigMasterConfigStageSetTest(self.config_master_host['host'], self.config_master_host['fqdn']))
+        self.infra_tests.append(
+            ConfigMasterConfigStageSetTest(self.config_master_host['host'], self.config_master_host['fqdn']))
