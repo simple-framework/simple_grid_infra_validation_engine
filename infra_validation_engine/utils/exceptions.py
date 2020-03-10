@@ -22,6 +22,16 @@ class DirectoryNotFoundError(Exception):
     pass
 
 
+class FileNotCreatedError(Exception):
+    """Raised when a file is excpected but not found"""
+    pass
+
+
+class FileContentsMismatchError(Exception):
+    """Raised when a file contents differ from what is expected"""
+    pass
+
+  
 class PackageNotInstalledError(Exception):
     """Raised when a package is expected but not installed"""
     pass
