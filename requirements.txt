@@ -1,5 +1,6 @@
 atomicwrites==1.3.0
 attrs==19.1.0
+click==7.0.0
 configparser==3.7.4
 contextlib2==0.5.5
 funcsigs==1.0.2
