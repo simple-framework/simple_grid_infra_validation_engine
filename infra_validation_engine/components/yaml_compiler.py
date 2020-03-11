@@ -23,6 +23,9 @@ class YamlCompilerConstants(Constants):
 
 
 class YamlCompilerInstallationTest(InfraTest):
+    """
+    Check if the YAML compiler is installed from GitHub
+    """
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):

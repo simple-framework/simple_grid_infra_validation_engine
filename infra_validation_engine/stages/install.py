@@ -13,7 +13,7 @@
 
 from infra_validation_engine.components.yaml_compiler import YamlCompilerInstallationTest
 from infra_validation_engine.nodes.config_master import (ConfigMasterSimpleGridFolderTest, ConfigMasterGitInstalledTest,
-                                                         ConfigMasterDockerInstalledTest, ConfigMasterBoltInstalledTest,
+                                                         ConfigMasterDockerInstalledTest,
                                                          ConfigMasterSiteLevelConfigFileTest,
                                                          ConfigMasterFileServerConfigFileTest,
                                                          ConfigMasterSSHHostKeyFileTest,
@@ -37,7 +37,6 @@ class Install(Stage):
             ConfigMasterSimpleGridFolderTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             ConfigMasterGitInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             ConfigMasterDockerInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-            ConfigMasterBoltInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             ConfigMasterSiteLevelConfigFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             ConfigMasterFileServerConfigFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             ConfigMasterSSHHostKeyFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),

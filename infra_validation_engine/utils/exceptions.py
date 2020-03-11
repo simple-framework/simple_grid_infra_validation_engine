@@ -18,12 +18,12 @@ class ComponentNotInstalledError(Exception):
 
 
 class DirectoryNotFoundError(Exception):
-    """Raised when a directory is excpected but not found"""
+    """Raised when a directory is expected but not found"""
     pass
 
 
 class FileNotCreatedError(Exception):
-    """Raised when a file is excpected but not found"""
+    """Raised when a file is expected but not found"""
     pass
 
 
@@ -35,3 +35,11 @@ class FileContentsMismatchError(Exception):
 class PackageNotInstalledError(Exception):
     """Raised when a package is expected but not installed"""
     pass
+
+
+class PackageNotConfiguredError(Exception):
+    """Raised if the configuration of package is improper or not found"""
+
+
+class NetworkError(Exception):
+    """Raised if nodes cannot connect to each other"""

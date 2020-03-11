@@ -51,6 +51,8 @@ class InfraTest:
         self.name = name
         self.description = description
         self.fqdn = fqdn
+        self.err = None
+        self.logger = logging.getLogger(__name__)
 
     @abstractmethod
     def run(self):
@@ -105,7 +107,7 @@ class Stage:
                         exit_code = 1
                         test.fail()
                     except Exception as ex:
-                        self.logger.error("{test} failed".format(test=test.name))
+                        self.logger.error("{test} failed! {details}".format(test=test.name, details=ex.message))
                         self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)),
                                          exc_info=True)
                         report["error"] = ex.message
@@ -120,6 +122,7 @@ class Stage:
             reports.append(report)
         self.logger.api(json.dumps(reports, indent=4))
         return exit_code
+
 
 class StageType(ABCMeta):
     """

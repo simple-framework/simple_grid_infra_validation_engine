@@ -18,6 +18,9 @@ from infra_validation_engine.utils.exceptions import DirectoryNotFoundError, Pac
 
 
 class ConfigMasterSimpleGridFolderTest(InfraTest):
+    """
+    Test if simple_grid config dir is present on a host
+    """
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
@@ -76,25 +79,25 @@ class ConfigMasterDockerInstalledTest(InfraTest):
         raise PackageNotInstalledError(err_msg)
 
 
-class ConfigMasterBoltInstalledTest(InfraTest):
-    __metaclass__ = InfraTestType
-
-    def __init__(self, host, fqdn):
-        InfraTest.__init__(self,
-                           "Config Master - Bolt Test",
-                           "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.BOLT_PKG_NAME, fqdn=fqdn),
-                           host,
-                           fqdn)
-
-    def run(self):
-        cmd = self.host.run("bolt --version")
-
-        return cmd.rc == 0
-
-    def fail(self):
-        err_msg = "Package {pkg} is not installed on {fqdn}".format(pkg=Constants.BOLT_PKG_NAME, fqdn=self.fqdn)
-
-        raise PackageNotInstalledError(err_msg)
+# class ConfigMasterBoltInstalledTest(InfraTest):
+#     __metaclass__ = InfraTestType
+#
+#     def __init__(self, host, fqdn):
+#         InfraTest.__init__(self,
+#                            "Config Master - Bolt Test",
+#                            "Check if {pkg} is installed on {fqdn}".format(pkg=Constants.BOLT_PKG_NAME, fqdn=fqdn),
+#                            host,
+#                            fqdn)
+#
+#     def run(self):
+#         cmd = self.host.run("bolt --version")
+#
+#         return cmd.rc == 0
+#
+#     def fail(self):
+#         err_msg = "Package {pkg} is not installed on {fqdn}".format(pkg=Constants.BOLT_PKG_NAME, fqdn=self.fqdn)
+#
+#         raise PackageNotInstalledError(err_msg)
 
 
 class ConfigMasterSiteLevelConfigFileTest(InfraTest):

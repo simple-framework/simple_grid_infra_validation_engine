@@ -16,6 +16,7 @@ import yaml
 import click
 from infra_validation_engine.core import Pool
 from stages.install import Install
+from stages.test import Test
 from utils import get_lightweight_component_hosts, get_host_representation, add_testinfra_host
 import logging
 from utils import config_root_logger
@@ -68,7 +69,7 @@ def cli(ctx):
                    "If --file is specified as well, tests are executed only on --targets ")
 @click.argument('stages',
                 nargs=-1,
-                type=click.Choice(['install', 'config', 'pre_deploy', 'deploy']),
+                type=click.Choice([x.lower() for x in Pool.get_all_stages()]),
                 )
 def validate(file, config_master, mode, verbose, targets, stages):
     """
@@ -87,6 +88,7 @@ def validate(file, config_master, mode, verbose, targets, stages):
     lc_hosts_rep = []
     all_hosts_rep = [cm_host_rep]
     augmented_site_level_config = None
+    exit_code = 1
 
     if targets is not None:
         hostnames = [x.strip() for x in targets.split(',')]
@@ -119,6 +121,9 @@ def validate(file, config_master, mode, verbose, targets, stages):
     if 'install' in stages:
         install_stage = Install(cm_host_rep, lc_hosts_rep)
         exit_code = install_stage.execute()
+    elif 'test' in stages:
+        test_stage = Test(cm_host_rep, lc_hosts_rep)
+        exit_code = test_stage.execute()
     exit(exit_code)
     # logger.api( "test")
     # logger.api("test")
