@@ -51,7 +51,12 @@ class InfraTest:
         self.name = name
         self.description = description
         self.fqdn = fqdn
+        self.rc = -1
         self.err = None
+        self.out = None
+        # If message is specified, it will be present in report and output in api/standalone modes
+        self.message = None
+        self.warn = False
         self.logger = logging.getLogger(__name__)
 
     @abstractmethod
@@ -101,6 +106,10 @@ class Stage:
             try:
                 if test.run():  # test_passed
                     self.logger.info("{test} passed!".format(test=test.name))
+                    #handle warnings
+                    if test.warn:
+                        exit_code = 3
+                        self.logger.warning(test.message)
                     report['result'] = 'pass'
                 else:  # test failed
                     try:
@@ -119,6 +128,9 @@ class Stage:
                 report["result"] = "exec_fail"
                 report["error"] = ex.message
                 report["trace"] = traceback.format_exc()
+            if test.message is not None:
+                self.logger.info(test.message)
+                report['message'] = test.message
             reports.append(report)
         self.logger.api(json.dumps(reports, indent=4))
         return exit_code

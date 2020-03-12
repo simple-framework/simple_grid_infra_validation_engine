@@ -39,7 +39,19 @@ class PackageNotInstalledError(Exception):
 
 class PackageNotConfiguredError(Exception):
     """Raised if the configuration of package is improper or not found"""
+    pass
 
 
 class NetworkError(Exception):
     """Raised if nodes cannot connect to each other"""
+    pass
+
+
+class ServiceNotRunningError(Exception):
+    """Raised if service is not running on the host"""
+    pass
+
+
+class CommandExecutionError(Exception):
+    """ Raised if a command could not be executed on a node """
+    pass

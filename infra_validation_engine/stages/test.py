@@ -12,6 +12,8 @@
 # limitations under the License.
 from infra_validation_engine.components.bolt import BoltInstallationTest, BoltConfigurationDirectoryTest, \
     BoltConfigurationFileTest, BoltNetworkConfigurationTest
+from infra_validation_engine.components.docker import DockerInstallationTest, DockerServiceTest, DockerImageTest, \
+    DockerContainerStatusTest
 from infra_validation_engine.core import Stage, StageType
 
 
@@ -22,10 +24,18 @@ class Test(Stage):
         Stage.__init__(self, "Test", config_master_host, lightweight_component_hosts)
 
     def register_tests(self):
+        # self.infra_tests.extend([
+        #     BoltInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+        #     BoltConfigurationDirectoryTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+        #     BoltConfigurationFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+        #     BoltNetworkConfigurationTest(self.config_master_host['host'], self.config_master_host['fqdn'],
+        #                                  self.lightweight_component_hosts),
+        # ])
+
         self.infra_tests.extend([
-            BoltInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-            BoltConfigurationDirectoryTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-            BoltConfigurationFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-            BoltNetworkConfigurationTest(self.config_master_host['host'], self.config_master_host['fqdn'],
-                                         self.lightweight_component_hosts),
+            DockerInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            DockerServiceTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            DockerImageTest(self.config_master_host['host'], self.config_master_host['fqdn'], image="maany/*"),
+            DockerContainerStatusTest(self.config_master_host['host'], self.config_master_host['fqdn'],
+                                      container="condor_cm"),
         ])
