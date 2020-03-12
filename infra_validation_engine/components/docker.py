@@ -13,7 +13,7 @@
 
 from infra_validation_engine.core import InfraTest, InfraTestType
 from infra_validation_engine.utils.constants import Constants
-from infra_validation_engine.utils.exceptions import PackageNotInstalledError, ServiceNotRunningError, \
+from infra_validation_engine.core.exceptions import PackageNotFoundError, ServiceNotRunningError, \
     CommandExecutionError
 
 
@@ -56,7 +56,7 @@ class DockerInstallationTest(InfraTest):
     def fail(self):
         err_msg = "Package {pkg} is not installed on {fqdn}".format(pkg=DockerConstants.DOCKER_PKG_NAME, fqdn=self.fqdn)
 
-        raise PackageNotInstalledError(err_msg)
+        raise PackageNotFoundError(err_msg)
 
 
 class DockerServiceTest(InfraTest):

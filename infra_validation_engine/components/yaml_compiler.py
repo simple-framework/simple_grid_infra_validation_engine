@@ -13,7 +13,7 @@
 
 from infra_validation_engine.core import InfraTest, InfraTestType
 from infra_validation_engine.utils.constants import Constants
-from infra_validation_engine.utils.exceptions import ComponentNotInstalledError
+from infra_validation_engine.core.exceptions import ComponentNotInstalledError
 
 
 class YamlCompilerConstants(Constants):

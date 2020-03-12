@@ -13,8 +13,8 @@
 
 from infra_validation_engine.core import InfraTest, InfraTestType
 from infra_validation_engine.utils.constants import Constants
-from infra_validation_engine.utils.exceptions import DirectoryNotFoundError, PackageNotInstalledError, \
-    FileNotCreatedError, FileContentsMismatchError
+from infra_validation_engine.core.exceptions import DirectoryNotFoundError, PackageNotFoundError, \
+    FileNotFoundError, FileContentsMismatchError
 
 
 class ConfigMasterSimpleGridFolderTest(InfraTest):
@@ -55,7 +55,7 @@ class ConfigMasterGitInstalledTest(InfraTest):
     def fail(self):
         err_msg = "Package {pkg} is not installed on {fqdn}".format(pkg=Constants.GIT_PKG_NAME, fqdn=self.fqdn)
 
-        raise PackageNotInstalledError(err_msg)
+        raise PackageNotFoundError(err_msg)
 
 
 class ConfigMasterDockerInstalledTest(InfraTest):
@@ -76,7 +76,7 @@ class ConfigMasterDockerInstalledTest(InfraTest):
     def fail(self):
         err_msg = "Package {pkg} is not installed on {fqdn}".format(pkg=Constants.DOCKER_PKG_NAME, fqdn=self.fqdn)
 
-        raise PackageNotInstalledError(err_msg)
+        raise PackageNotFoundError(err_msg)
 
 
 class ConfigMasterSiteLevelConfigFileTest(InfraTest):
@@ -96,7 +96,7 @@ class ConfigMasterSiteLevelConfigFileTest(InfraTest):
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SITE_LEVEL_CONFIG_FILE, fqdn=self.fqdn)
 
-        raise FileNotCreatedError(err_msg)
+        raise FileNotFoundError(err_msg)
 
 
 class ConfigMasterFileServerConfigFileTest(InfraTest):
@@ -116,7 +116,7 @@ class ConfigMasterFileServerConfigFileTest(InfraTest):
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.FILESERVER_CONFIG_FILE, fqdn=self.fqdn)
 
-        raise FileNotCreatedError(err_msg)
+        raise FileNotFoundError(err_msg)
 
 
 class ConfigMasterSSHHostKeyFileTest(InfraTest):
@@ -135,7 +135,7 @@ class ConfigMasterSSHHostKeyFileTest(InfraTest):
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SSH_HOST_KEY, fqdn=self.fqdn)
 
-        raise FileNotCreatedError(err_msg)
+        raise FileNotFoundError(err_msg)
 
 
 class ConfigMasterSiteManifestFileTest(InfraTest):
@@ -154,7 +154,7 @@ class ConfigMasterSiteManifestFileTest(InfraTest):
     def fail(self):
         err_msg = "File {file} is not present on {fqdn}".format(file=Constants.SITE_MANIFEST, fqdn=self.fqdn)
 
-        raise FileNotCreatedError(err_msg)
+        raise FileNotFoundError(err_msg)
 
 
 class ConfigMasterConfigStageSetTest(InfraTest):

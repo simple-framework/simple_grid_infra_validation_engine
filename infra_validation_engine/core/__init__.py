@@ -15,6 +15,8 @@ import traceback
 from abc import ABCMeta, abstractmethod
 import logging
 
+from infra_validation_engine.core.exceptions import DirectoryNotFoundError
+
 
 class Pool:
     """
@@ -90,9 +92,10 @@ class Stage:
 
     def execute(self):
         """
-        -1: test could not be executed
-        0: test pass
-        1: test failed
+        exit_code = 0 # all pass
+        exit_code = 1 # some passed and some failed, or all tests failed
+        exit_code = 3 # some passed and some tests raised warning, or all tests raised warning
+        exit_code = 4 # some passed and some failed and some raised warning
         """
         self.logger.info("Execution infrastructure tests for {stage}".format(stage=self.name))
         test_name_csv = ', '.join([test.name for test in self.infra_tests])
@@ -106,7 +109,7 @@ class Stage:
             try:
                 if test.run():  # test_passed
                     self.logger.info("{test} passed!".format(test=test.name))
-                    #handle warnings
+                    # handle warnings
                     if test.warn:
                         exit_code = 3
                         self.logger.warning(test.message)

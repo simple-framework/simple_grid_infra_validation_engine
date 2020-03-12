@@ -14,6 +14,7 @@ from infra_validation_engine.components.bolt import BoltInstallationTest, BoltCo
     BoltConfigurationFileTest, BoltNetworkConfigurationTest
 from infra_validation_engine.components.docker import DockerInstallationTest, DockerServiceTest, DockerImageTest, \
     DockerContainerStatusTest
+from infra_validation_engine.components.swarm import *
 from infra_validation_engine.core import Stage, StageType
 
 
@@ -32,10 +33,14 @@ class Test(Stage):
         #                                  self.lightweight_component_hosts),
         # ])
 
+        # self.infra_tests.extend([
+        #     DockerInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+        #     DockerServiceTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+        #     DockerImageTest(self.config_master_host['host'], self.config_master_host['fqdn'], image="maany/*"),
+        #     DockerContainerStatusTest(self.config_master_host['host'], self.config_master_host['fqdn'],
+        #                               container="condor_cm"),
+        # ])
+
         self.infra_tests.extend([
-            DockerInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-            DockerServiceTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-            DockerImageTest(self.config_master_host['host'], self.config_master_host['fqdn'], image="maany/*"),
-            DockerContainerStatusTest(self.config_master_host['host'], self.config_master_host['fqdn'],
-                                      container="condor_cm"),
+            SwarmDNSFileTest(self.config_master_host['host'], self.config_master_host['fqdn'])
         ])

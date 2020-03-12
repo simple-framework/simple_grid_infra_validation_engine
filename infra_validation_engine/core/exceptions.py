@@ -22,7 +22,7 @@ class DirectoryNotFoundError(Exception):
     pass
 
 
-class FileNotCreatedError(Exception):
+class FileNotFoundError(Exception):
     """Raised when a file is expected but not found"""
     pass
 
@@ -32,7 +32,7 @@ class FileContentsMismatchError(Exception):
     pass
 
   
-class PackageNotInstalledError(Exception):
+class PackageNotFoundError(Exception):
     """Raised when a package is expected but not installed"""
     pass
 
@@ -49,6 +49,11 @@ class NetworkError(Exception):
 
 class ServiceNotRunningError(Exception):
     """Raised if service is not running on the host"""
+    pass
+
+
+class ServiceNotFoundError(Exception):
+    """Raised if service is not found on the host"""
     pass
 
 

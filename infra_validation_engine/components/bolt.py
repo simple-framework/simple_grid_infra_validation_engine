@@ -10,12 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import re
 from infra_validation_engine.core import InfraTestType, InfraTest
 from infra_validation_engine.utils.constants import Constants
-from infra_validation_engine.utils.exceptions import PackageNotInstalledError, PackageNotConfiguredError, \
-    DirectoryNotFoundError, FileNotCreatedError, NetworkError
+from infra_validation_engine.core.exceptions import PackageNotFoundError, DirectoryNotFoundError, FileNotFoundError, NetworkError
 
 
 class BoltConstants(Constants):
@@ -45,7 +43,7 @@ class BoltInstallationTest(InfraTest):
     def fail(self):
         err_msg = "Package {pkg} is not installed on {fqdn}".format(pkg=BoltConstants.BOLT_PKG_NAME, fqdn=self.fqdn)
 
-        raise PackageNotInstalledError(err_msg)
+        raise PackageNotFoundError(err_msg)
 
 
 class BoltConfigurationDirectoryTest(InfraTest):
@@ -94,7 +92,7 @@ class BoltConfigurationFileTest(InfraTest):
     def fail(self):
         err_msg = "File {bolt_config} is absent on {fqdn}.".format(
             bolt_config=BoltConstants.BOLT_CONFIG_FILE, fqdn=self.fqdn)
-        raise FileNotCreatedError(err_msg)
+        raise FileNotFoundError(err_msg)
 
 
 class BoltNetworkConfigurationTest(InfraTest):
