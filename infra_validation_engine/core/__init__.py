@@ -14,7 +14,6 @@ import json
 import traceback
 from abc import ABCMeta, abstractmethod
 import logging
-
 from infra_validation_engine.core.exceptions import DirectoryNotFoundError
 
 
@@ -60,6 +59,8 @@ class InfraTest:
         self.message = None
         self.warn = False
         self.logger = logging.getLogger(__name__)
+        self.report = self.report = {'name': self.name, 'description': self.description, 'result': 'fail'}
+        self.exit_code = 0
 
     @abstractmethod
     def run(self):
@@ -72,6 +73,140 @@ class InfraTest:
     def resolution(self):
         return ""
 
+    def execute(self):
+        self.logger.info("Running {test_name} on {node}".format(test_name=self.name, node=self.fqdn))
+        try:
+            if self.run():  # test_passed
+                self.logger.info("{test} passed!".format(test=self.name))
+                # handle warnings
+                if self.warn:
+                    self.exit_code = 3
+                    self.logger.warning(self.message)
+                self.report['result'] = 'pass'
+            else:  # test failed
+                try:
+                    self.exit_code = 1
+                    self.fail()
+                except Exception as ex:
+                    self.logger.error("{test} failed! {details}".format(test=self.name, details=ex.message))
+                    self.logger.info("{error} occurred for {test}".format(test=self.name, error=type(ex)),
+                                     exc_info=True)
+                    self.report["error"] = ex.message
+                    self.report["trace"] = traceback.format_exc()
+        except Exception as ex:
+            self.exit_code = 1
+            self.logger.error("Could not run {test}!".format(test=self.name))
+            self.logger.info("{error} occurred for {test}".format(test=self.name, error=type(ex)), exc_info=True)
+            self.report["result"] = "exec_fail"
+            self.report["error"] = ex.message
+            self.report["trace"] = traceback.format_exc()
+        if self.message is not None:
+            self.logger.info(self.message)
+            self.report['message'] = self.message
+
+        self.report['exit_code'] = exit_code
+
+
+class Executor:
+    """
+    An abstract executor for InfraTests
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, name):
+        self.name = name
+        self.logger = logging.getLogger(__name__)
+        self.reports = []
+        self.infra_tests = []
+
+    def execute(self):
+        self.logger.info("Execution infrastructure tests for {name}".format(name=self.name))
+        test_name_csv = ', '.join([test.name for test in self.infra_tests])
+        self.logger.info("Executor {name} has the following tests registered: {test_name_csv}".format(
+            name=self.name,
+            test_name_csv=test_name_csv))
+
+    def register_infra_test(self, infra_test):
+        self.infra_tests.append(infra_test)
+
+    @abstractmethod
+    def pre_condition(self):
+        pass
+
+
+class SerialExecutor(Executor):
+    """
+    Collection and Execution of InfraTests. Tests are serially connected i.e. if one test passes,
+    then we move to the next test. If a test fails, the pipeline reports the error, warning.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, name):
+        Executor.__init__(self, name)
+
+    @abstractmethod
+    def pre_condition(self):
+        pass
+
+    def execute(self):
+        super(SerialExecutor, self).execute()
+        exit_code = 0
+        for test in self.infra_tests:
+            self.logger.info("Running {test_name} on {node}".format(test_name=test.name, node=test.fqdn))
+            report = {'name': test.name, 'description': test.description, 'result': 'fail'}
+            try:
+                if test.run():  # test_passed
+                    self.logger.info("{test} passed!".format(test=test.name))
+                    # handle warnings
+                    if test.warn:
+                        exit_code = 3
+                        self.logger.warning(test.message)
+                    report['result'] = 'pass'
+                else:  # test failed
+                    try:
+                        exit_code = 1
+                        test.fail()
+                    except Exception as ex:
+                        self.logger.error("{test} failed! {details}".format(test=test.name, details=ex.message))
+                        self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)),
+                                         exc_info=True)
+                        report["error"] = ex.message
+                        report["trace"] = traceback.format_exc()
+            except Exception as ex:
+                exit_code = 1
+                self.logger.error("Could not run {test}!".format(test=test.name))
+                self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)), exc_info=True)
+                report["result"] = "exec_fail"
+                report["error"] = ex.message
+                report["trace"] = traceback.format_exc()
+            if test.message is not None:
+                self.logger.info(test.message)
+                report['message'] = test.message
+            self.reports.append(report)
+        self.logger.api(json.dumps(self.reports, indent=4))
+        return exit_code
+
+
+# class StageExecutor:
+#     """ Collect executors to build a stage and execute tests in a stage """
+#     __metaclass__ = ABCMeta
+#
+#     def __init__(self, name):
+#         self.name = name
+#         self.executors = []
+#
+#     @abstractmethod
+#     def build_pipeline(self):
+#         pass
+#
+#     def report(self):
+#         pass
+#
+#     def log_intro(self):
+#         pass
+#
+#     def execute(self):
+#         pass
 
 class Stage:
     """ Collection and Execution of InfraTests """

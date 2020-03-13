@@ -124,6 +124,7 @@ def validate(file, config_master, mode, verbose, targets, stages):
     elif 'test' in stages:
         test_stage = Test(cm_host_rep, lc_hosts_rep)
         exit_code = test_stage.execute()
+
     exit(exit_code)
     # logger.api( "test")
     # logger.api("test")
