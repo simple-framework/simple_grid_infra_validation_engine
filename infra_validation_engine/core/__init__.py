@@ -74,29 +74,33 @@ class InfraTest:
         return ""
 
     def execute(self):
-        self.logger.info("Running {test_name} on {node}".format(test_name=self.name, node=self.fqdn))
+        log_str = "{test} on {fqdn}:".format(fqdn=self.fqdn, test=self.name)
+        self.logger.info("{log_str} running".format(log_str=log_str))
         try:
             if self.run():  # test_passed
-                self.logger.info("{test} passed!".format(test=self.name))
+                self.logger.info("{log_str} anpassed!".format(log_str=log_str))
                 # handle warnings
                 if self.warn:
                     self.exit_code = 3
-                    self.logger.warning(self.message)
+                    self.logger.warning("{log_str} {message}".format(log_str=log_str, message=self.message))
                 self.report['result'] = 'pass'
             else:  # test failed
                 try:
                     self.exit_code = 1
                     self.fail()
                 except Exception as ex:
-                    self.logger.error("{test} failed! {details}".format(test=self.name, details=ex.message))
-                    self.logger.info("{error} occurred for {test}".format(test=self.name, error=type(ex)),
+                    self.logger.error("{test} failed on {fqdn}! {details}".format(test=self.name,
+                                                                                  fqdn=self.fqdn, details=ex.message))
+                    self.logger.info("{log_str} {error} occurred!!".format(log_str=log_str, error=type(ex)),
                                      exc_info=True)
                     self.report["error"] = ex.message
                     self.report["trace"] = traceback.format_exc()
         except Exception as ex:
             self.exit_code = 1
-            self.logger.error("Could not run {test}!".format(test=self.name))
-            self.logger.info("{error} occurred for {test}".format(test=self.name, error=type(ex)), exc_info=True)
+            self.logger.error("{log_str} Could not run {test}!".format(log_str=log_str, test=self.name))
+            self.logger.info(
+                "{log_str} {error} occurred for {test}".format(log_str=log_str, test=self.name, error=type(ex)),
+                exc_info=True)
             self.report["result"] = "exec_fail"
             self.report["error"] = ex.message
             self.report["trace"] = traceback.format_exc()
@@ -104,7 +108,7 @@ class InfraTest:
             self.logger.info(self.message)
             self.report['message'] = self.message
 
-        self.report['exit_code'] = exit_code
+        # self.report['exit_code'] = self.exit_code
 
 
 class Executor:

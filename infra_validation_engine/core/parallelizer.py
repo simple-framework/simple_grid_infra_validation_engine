@@ -1,6 +1,20 @@
+# coding: utf-8
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import json
 import sys
 from abc import ABCMeta
 import logging
+import time
 
 from infra_validation_engine.core import Executor
 
@@ -26,23 +40,29 @@ class Worker(Thread):
         self.start()
 
     def run(self):
-        logger.info("{worker}: Started \n".format(worker=self.name))
+        logger.debug("{worker}: Started \n".format(worker=self.name))
         while True:
             infra_test = self.tasks.get()
-            logger.info("Queue status is {queue}".format(queue=self.tasks.qsize()))
             try:
                 infra_test.execute()
                 report = infra_test.report
-
-                exit_code = infra_test.run()
-                print "Running Test on {fqdn} exited {code}".format(fqdn=infra_test.fqdn, code=exit_code)
             except Exception as e:
-                print "Error on {fqdn}".format(fqdn=infra_test.fqdn)
                 # An exception happened in this thread
-                print(e)
+                err_msg = "Error during parallel execution of {test} on {fqdn}".format(test=infra_test.name,
+                                                                                       fqdn=infra_test.fqdn)
+                logger.error("{worker}: {err_msg}".format(worker=self.name, err_msg=err_msg))
+                logger.debug("{worker}: {error} occurred when running {test} on  {fqdn}".format(worker=self.name,
+                                                                                                error=type(e),
+                                                                                                test=infra_test.name,
+                                                                                                fqdn=infra_test.fqdn
+                                                                                                ), exc_info=True)
             finally:
                 # Mark this task as done, whether an exception happened or not
-                print "Removing Test for {fqdn}".format(fqdn=infra_test.fqdn)
+                logger.debug("{worker}: Unqueue {test} for {fqdn}. Test exit code was: {code}".format(
+                    worker=self.name,
+                    test=infra_test.name,
+                    fqdn=infra_test.fqdn,
+                    code=infra_test.exit_code))
                 self.tasks.task_done()
 
 
@@ -57,9 +77,8 @@ class ThreadPool:
 
     def add_task(self, infra_test):
         """ Add a task to the queue """
-        print "Adding TEST FOR {fqdn} to QUEUE".format(fqdn=infra_test.fqdn)
+        logger.debug("Queueing {fqdn}:{test}".format(test=infra_test.name, fqdn=infra_test.fqdn))
         self.infra_tests_q.put(infra_test)
-        print "Queue size: {queue}".format(queue=self.infra_tests_q.qsize())
 
     def wait_completion(self):
         """ Wait for completion of all the tasks in the queue """
@@ -83,6 +102,15 @@ class ParallelExecutor(Executor):
 
     def execute(self):
         super(ParallelExecutor, self).execute()
+        total_tests = len(self.infra_tests)
         for test in self.infra_tests:
             self.pool.add_task(test)
+        while self.pool.infra_tests_q.qsize() > 0:
+            self.logger.debug("{executor} queue status: {completed}/{total}".format(
+                executor=self.name, total=total_tests,
+                completed=(total_tests - self.pool.infra_tests_q.qsize())))
+            time.sleep(2)
         self.pool.wait_completion()
+        # Tests completed. Generate reports
+        reports = [test.report for test in self.infra_tests]
+        self.logger.api(json.dumps(reports, indent=4))
