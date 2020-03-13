@@ -14,7 +14,7 @@ import json
 import traceback
 from abc import ABCMeta, abstractmethod
 import logging
-from infra_validation_engine.core.exceptions import DirectoryNotFoundError
+from infra_validation_engine.core.exceptions import DirectoryNotFoundError, PreConditionNotSatisfiedError
 
 
 class Pool:
@@ -77,8 +77,8 @@ class InfraTest:
         log_str = "{test} on {fqdn}:".format(fqdn=self.fqdn, test=self.name)
         self.logger.info("{log_str} running".format(log_str=log_str))
         try:
+            self.logger.info("{log_str} passed!".format(log_str=log_str))
             if self.run():  # test_passed
-                self.logger.info("{log_str} passed!".format(log_str=log_str))
                 # handle warnings
                 if self.warn:
                     self.exit_code = 3
@@ -123,6 +123,7 @@ class Executor:
         self.report = {"executor_name": self.name}
         self.infra_tests = []
         self.exit_code = 0
+        self.hard_error_pre_condition = True
 
     def register_infra_test(self, infra_test):
         """ Register a test to be run by this executor """
@@ -149,8 +150,33 @@ class Executor:
         exit_codes = [test.exit_code for test in self.infra_tests]
         if 1 in exit_codes:
             self.exit_code = 1
+            self.report["result"] = "fail"
         elif 3 in exit_codes:
             self.exit_code = 3
+            self.report["result"] = "warning"
+        else:
+            self.report["result"] = "pass"
+
+    def execute(self):
+        try:
+            self.pre_condition()
+        except PreConditionNotSatisfiedError as err:
+            if self.hard_error_pre_condition:
+                self.logger.error("The pre condition check for Executor {name} was not satisfied. "
+                                  "Therefore, the execution of the following tests is being skipped: {tests}".format(
+                                    name=self.name,
+                                    tests=', '.join(
+                                        ["{test} on {fqdn}".format(test=x.name, fqdn=x.fqdn) for x in self.infra_tests]
+                                    )))
+                self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
+                self.report["result"] = "exec_fail"
+                self.report["error"] = err.message
+                self.report["trace"] = traceback.format_exc()
+                return
+        # Ready to run tests
+        self.run()
+        # Update report
+        self.post_process()
 
 
 class Stage:

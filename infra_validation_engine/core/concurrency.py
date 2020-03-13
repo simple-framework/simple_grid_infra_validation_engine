@@ -41,7 +41,7 @@ class Worker(Thread):
             infra_test = self.tasks.get()
             infra_test.report["executor_thread"] = self.name
             try:
-                infra_test.run()
+                infra_test.execute()
             except Exception as e:
                 # An exception happened in this thread
                 err_msg = "Error during parallel execution of {test} on {fqdn}".format(test=infra_test.name,

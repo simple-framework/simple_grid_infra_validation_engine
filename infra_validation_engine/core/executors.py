@@ -21,7 +21,7 @@ class SerialExecutor(Executor):
     def run(self):
         super(SerialExecutor, self).run()
         for infra_test in self.infra_tests:
-            infra_test.run()
+            infra_test.execute()
 
 
 class ParallelExecutor(Executor):

@@ -60,4 +60,4 @@ class Test(Stage):
 
     def execute(self):
         executor = TestExecutor("Test Executor",4, self.config_master_host, self.lightweight_component_hosts)
-        executor.run()
+        executor.execute()
