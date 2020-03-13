@@ -10,13 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import sys
-from abc import ABCMeta
 import logging
-import time
 
-from infra_validation_engine.core import Executor
 
 IS_PY2 = sys.version_info < (3, 0)
 
@@ -45,7 +41,7 @@ class Worker(Thread):
             infra_test = self.tasks.get()
             infra_test.report["executor_thread"] = self.name
             try:
-                infra_test.execute()
+                infra_test.run()
             except Exception as e:
                 # An exception happened in this thread
                 err_msg = "Error during parallel execution of {test} on {fqdn}".format(test=infra_test.name,
@@ -58,7 +54,7 @@ class Worker(Thread):
                                                                                                 ), exc_info=True)
             finally:
                 # Mark this task as done, whether an exception happened or not
-                logger.debug("{worker}: Unqueue {test} for {fqdn}. Test exit code was: {code}".format(
+                logger.debug("{worker}: Dequeue {test} for {fqdn}. Test exit code was: {code}".format(
                     worker=self.name,
                     test=infra_test.name,
                     fqdn=infra_test.fqdn,
@@ -84,46 +80,4 @@ class ThreadPool:
         """ Wait for completion of all the tasks in the queue """
         self.infra_tests_q.join()
 
-
-class ParallelExecutor(Executor):
-    """
-    Executes InfraTests in parallel.
-    """
-    __metaclass__ = ABCMeta
-
-    def __init__(self, name, num_threads=10, status_notification_interval=2):
-        Executor.__init__(self, name)
-        self.num_threads = num_threads
-        self.pool = ThreadPool(num_threads)
-        self.status_notification_interval = status_notification_interval
-        self.report["executor_type"] = "parallel"
-
-    def pre_condition(self):
-        """ Ensure all tests are children of the Thread class """
-        pass
-
-    def execute(self):
-        """ Execute tests in parallel """
-        super(ParallelExecutor, self).execute()
-        total_tests = len(self.infra_tests)
-        for test in self.infra_tests:
-            self.pool.add_task(test)
-
-        """ Monitor Execution of tests"""
-        while self.pool.infra_tests_q.qsize() > 0:
-            self.logger.debug("{executor} queue status: {completed}/{total}".format(
-                executor=self.name, total=total_tests,
-                completed=(total_tests - self.pool.infra_tests_q.qsize())))
-            time.sleep(self.status_notification_interval)
-        self.pool.wait_completion()
-
-        """ InfraTests Completed. Generate reports and prepare exit_code"""
-        test_reports = [test.report for test in self.infra_tests]
-        self.report['reports'] = test_reports
-        self.logger.api(json.dumps(self.report, indent=4))
-        exit_codes = [test.exit_code for test in self.infra_tests]
-        if 1 in exit_codes:
-            self.exit_code = 1
-        elif 3 in exit_codes:
-            self.exit_code = 3
 

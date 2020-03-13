@@ -17,7 +17,7 @@ from infra_validation_engine.components.docker import DockerInstallationTest, Do
 from infra_validation_engine.components.swarm import *
 
 from infra_validation_engine.core import Stage, StageType
-from infra_validation_engine.core.parallelizer import ParallelExecutor
+from infra_validation_engine.core.executors import ParallelExecutor
 from infra_validation_engine.core.standard_tests import PackageIsInstalledTest
 
 
@@ -60,4 +60,4 @@ class Test(Stage):
 
     def execute(self):
         executor = TestExecutor("Test Executor",4, self.config_master_host, self.lightweight_component_hosts)
-        executor.execute()
+        executor.run()
