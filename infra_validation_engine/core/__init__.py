@@ -15,6 +15,7 @@ import traceback
 from abc import ABCMeta, abstractmethod
 import logging
 from infra_validation_engine.core.exceptions import DirectoryNotFoundError, PreConditionNotSatisfiedError
+from collections import deque, OrderedDict
 
 
 class Pool:
@@ -45,6 +46,9 @@ class Pool:
 
 
 class InfraTest:
+    """
+    Exit_Code : 1,4,8::pass,pass+warn,error #someday
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self, name, description, host, fqdn):
@@ -120,7 +124,7 @@ class Executor:
     def __init__(self, name):
         self.name = name
         self.logger = logging.getLogger(__name__)
-        self.report = {"executor_name": self.name}
+        self.report = OrderedDict({"executor_name": self.name, "result": ''})
         self.infra_tests = []
         self.exit_code = 0
         self.hard_error_pre_condition = True
@@ -134,28 +138,10 @@ class Executor:
         """ Gather Info needed before running tests. Fail if the info is not available """
         pass
 
+    @abstractmethod
     def run(self):
         """ Run the Tests """
-        self.logger.info("Execution infrastructure tests for {name}".format(name=self.name))
-        test_name_csv = ', '.join([test.name for test in self.infra_tests])
-        self.logger.info("Executor {name} has the following tests registered: {test_name_csv}".format(
-            name=self.name,
-            test_name_csv=test_name_csv))
-
-    def post_process(self):
-        """ Generate Report and update Exit Code """
-        test_reports = [test.report for test in self.infra_tests]
-        self.report['reports'] = test_reports
-        self.logger.api(json.dumps(self.report, indent=4))
-        exit_codes = [test.exit_code for test in self.infra_tests]
-        if 1 in exit_codes:
-            self.exit_code = 1
-            self.report["result"] = "fail"
-        elif 3 in exit_codes:
-            self.exit_code = 3
-            self.report["result"] = "warning"
-        else:
-            self.report["result"] = "pass"
+        pass
 
     def execute(self):
         try:
@@ -168,81 +154,131 @@ class Executor:
                                     tests=', '.join(
                                         ["{test} on {fqdn}".format(test=x.name, fqdn=x.fqdn) for x in self.infra_tests]
                                     )))
-                self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
                 self.report["result"] = "exec_fail"
-                self.report["error"] = err.message
-                self.report["trace"] = traceback.format_exc()
+                self.exit_code = 1
+            else:
+                self.logger.warning("The pre condition check for Executor {name} was not satisfied. "
+                                    "However, we are continuing the execution of the tests")
+                self.exit_code = 4 # pre_condition failed
+            self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
+            self.report["error"] = err.message
+            self.report["trace"] = traceback.format_exc()
+            self.report["exit_code"] = self.exit_code
+
+            if self.hard_error_pre_condition:
                 return
         # Ready to run tests
+        self.logger.info("Executing infrastructure tests for Executor {name}".format(name=self.name))
+        test_name_csv = ', '.join([test.name for test in self.infra_tests])
+        self.logger.info("Executor {name} has the following tests registered: {test_name_csv}".format(
+            name=self.name,
+            test_name_csv=test_name_csv))
         self.run()
         # Update report
         self.post_process()
 
+    def post_process(self):
+        """ Generate Report and update Exit Code """
+        test_reports = [test.report for test in self.infra_tests]
+        self.report['total_tests'] = len(test_reports)
+        self.report['test_reports'] = test_reports
+        exit_codes = set([test.exit_code for test in self.infra_tests])
+        if self.exit_code == 4:
+            self.report["result"] = "pre condition failed! "
+        if 1 in exit_codes:
+            self.exit_code = 1
+            self.report["result"] += "some or all tests fail" #switch to codes someday
+        elif 3 in exit_codes:
+            self.exit_code = 3
+            self.report["result"] += "warnings present"
+        else:
+            self.report["result"] += "all tests passed"
+
+        # self.logger.api(json.dumps(self.report, indent=4))
+
 
 class Stage:
-    """ Collection and Execution of InfraTests """
+    """ Serial executor of composition of SerialExecutors, ParallelExecutors"""
 
     __metaclass__ = ABCMeta
 
     def __init__(self, name, config_master_host, lightweight_component_hosts):
         self.name = name
-        self.infra_tests = list()
         self.config_master_host = config_master_host
         self.lightweight_component_hosts = lightweight_component_hosts
         self.logger = logging.getLogger(__name__)
-        self.register_tests()
+        self.executors = deque()
+        self.create_test_pipeline()
+        self.report = OrderedDict({"stage_name": self.name, "result": ''})
+        self.hard_error_pre_condition = True
+        self.exit_code = 0
 
     @abstractmethod
-    def register_tests(self):
+    def create_test_pipeline(self):
         pass
 
+    @abstractmethod
+    def pre_condition(self):
+        pass
+
+    def run(self):
+        for executor in self.executors:
+            executor.execute()
+
     def execute(self):
-        """
-        exit_code = 0 # all pass
-        exit_code = 1 # some passed and some failed, or all tests failed
-        exit_code = 3 # some passed and some tests raised warning, or all tests raised warning
-        exit_code = 4 # some passed and some failed and some raised warning
-        """
-        self.logger.info("Execution infrastructure tests for {stage}".format(stage=self.name))
-        test_name_csv = ', '.join([test.name for test in self.infra_tests])
-        self.logger.info("Stage {stage} has the following tests registered: {test_name_csv}".format(stage=self.name,
-                                                                                                    test_name_csv=test_name_csv))
-        exit_code = 0
-        reports = []
-        for test in self.infra_tests:
-            self.logger.info("Running {test_name} on {node}".format(test_name=test.name, node=test.fqdn))
-            report = {'name': test.name, 'description': test.description, 'result': 'fail'}
-            try:
-                if test.run():  # test_passed
-                    self.logger.info("{test} passed!".format(test=test.name))
-                    # handle warnings
-                    if test.warn:
-                        exit_code = 3
-                        self.logger.warning(test.message)
-                    report['result'] = 'pass'
-                else:  # test failed
-                    try:
-                        exit_code = 1
-                        test.fail()
-                    except Exception as ex:
-                        self.logger.error("{test} failed! {details}".format(test=test.name, details=ex.message))
-                        self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)),
-                                         exc_info=True)
-                        report["error"] = ex.message
-                        report["trace"] = traceback.format_exc()
-            except Exception as ex:
-                exit_code = 1
-                self.logger.error("Could not run {test}!".format(test=test.name))
-                self.logger.info("{error} occurred for {test}".format(test=test.name, error=type(ex)), exc_info=True)
-                report["result"] = "exec_fail"
-                report["error"] = ex.message
-                report["trace"] = traceback.format_exc()
-            if test.message is not None:
-                self.logger.info(test.message)
-                report['message'] = test.message
-            reports.append(report)
-        self.logger.api(json.dumps(reports, indent=4))
-        return exit_code
+        try:
+            self.pre_condition()
+        except PreConditionNotSatisfiedError as err:
+            if self.hard_error_pre_condition:
+                self.logger.error("The pre condition check for Executor {name} was not satisfied. "
+                                  "Therefore, the execution of the following tests is being skipped: {tests}".format(
+                    name=self.name,
+                    tests=', '.join(
+                        ["{test} on {fqdn}".format(test=x.name, fqdn=x.fqdn) for x in self.infra_tests]
+                    )))
+                self.report["result"] = "exec_fail"
+                self.exit_code = 1
+            else:
+                self.logger.warning("The pre condition check for Executor {name} was not satisfied. "
+                                    "However, we are continuing the execution of the tests")
+                self.exit_code = 4  # pre_condition failed
+            self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
+            self.report["error"] = err.message
+            self.report["trace"] = traceback.format_exc()
+            self.report["exit_code"] = self.exit_code
+
+            if self.hard_error_pre_condition:
+                return
+
+        # Ready to run tests
+        self.logger.info("Executing Test Pipeline for Stage {name}".format(name=self.name))
+        executor_name_csv = ', '.join([executor.name for executor in self.executors])
+        self.logger.info("Stage {name} has the following executors registered: {executor_name_csv}".format(
+            name=self.name,
+            executor_name_csv=executor_name_csv))
+        self.run()
+        # Update report
+        self.post_process()
+
+    def post_process(self):
+        """ Generate report and update exit code"""
+        executor_reports = [executor.report for executor in self.executors]
+        self.report['executor_reports'] = executor_reports
+        self.report['total_executors'] = len(executor_reports)
+        exit_codes = set([executor.exit_code for executor in self.executors])
+
+        if self.exit_code == 4:
+            self.report["result"] = "pre condition failed! "
+        if 1 in exit_codes:
+            self.exit_code = 1
+            self.report["result"] += "some or all executors fail" #switch to codes someday
+        elif 3 in exit_codes:
+            self.exit_code = 3
+            self.report["result"] += "warnings present"
+        else:
+            self.report["result"] += "all executors passed"
+
+        self.logger.api(json.dumps(self.report, indent=4))
 
 
 class StageType(ABCMeta):

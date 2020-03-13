@@ -35,6 +35,13 @@ class Test(Stage):
     def __init__(self, config_master_host, lightweight_component_hosts):
         Stage.__init__(self, "Test", config_master_host, lightweight_component_hosts)
 
+    def pre_condition(self):
+        pass
+
+    def create_test_pipeline(self):
+        executor = TestExecutor("Test Executor", 4, self.config_master_host, self.lightweight_component_hosts)
+        self.executors.append(executor)
+
     def register_tests(self):
         pass
         # self.infra_tests.extend([
@@ -58,6 +65,6 @@ class Test(Stage):
         #     SwarmOverlayNetworkTest(self.config_master_host['host'], self.config_master_host['fqdn'])
         # ])
 
-    def execute(self):
-        executor = TestExecutor("Test Executor",4, self.config_master_host, self.lightweight_component_hosts)
-        executor.execute()
+    # def execute(self):
+    #     executor = TestExecutor("Test Executor",4, self.config_master_host, self.lightweight_component_hosts)
+    #     executor.execute()

@@ -19,7 +19,6 @@ class SerialExecutor(Executor):
         pass
 
     def run(self):
-        super(SerialExecutor, self).run()
         for infra_test in self.infra_tests:
             infra_test.execute()
 
@@ -43,7 +42,6 @@ class ParallelExecutor(Executor):
 
     def run(self):
         """ Execute tests in parallel """
-        super(ParallelExecutor, self).run()
         total_tests = len(self.infra_tests)
         for test in self.infra_tests:
             self.pool.add_task(test)
