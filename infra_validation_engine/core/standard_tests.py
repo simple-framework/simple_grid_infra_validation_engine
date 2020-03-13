@@ -134,6 +134,7 @@ class SystemdServiceIsActiveTest(InfraTest):
         elif self.rc == 2:
             raise ServiceNotRunningError(self.err)
 
+
 class CommandExecutionTest(InfraTest):
     """Checks if a command can be successfully executed on a host"""
 

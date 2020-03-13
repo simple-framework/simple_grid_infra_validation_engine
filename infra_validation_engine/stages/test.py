@@ -42,5 +42,6 @@ class Test(Stage):
         # ])
 
         self.infra_tests.extend([
-            SwarmDNSFileTest(self.config_master_host['host'], self.config_master_host['fqdn'])
+            SwarmDNSFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            SwarmOverlayNetworkTest(self.config_master_host['host'], self.config_master_host['fqdn'])
         ])
