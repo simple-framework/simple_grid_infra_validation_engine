@@ -43,9 +43,9 @@ class Worker(Thread):
         logger.debug("{worker}: Started \n".format(worker=self.name))
         while True:
             infra_test = self.tasks.get()
+            infra_test.report["executor_thread"] = self.name
             try:
                 infra_test.execute()
-                report = infra_test.report
             except Exception as e:
                 # An exception happened in this thread
                 err_msg = "Error during parallel execution of {test} on {fqdn}".format(test=infra_test.name,
@@ -77,7 +77,7 @@ class ThreadPool:
 
     def add_task(self, infra_test):
         """ Add a task to the queue """
-        logger.debug("Queueing {fqdn}:{test}".format(test=infra_test.name, fqdn=infra_test.fqdn))
+        logger.debug("Queueing {test} on {fqdn}".format(test=infra_test.name, fqdn=infra_test.fqdn))
         self.infra_tests_q.put(infra_test)
 
     def wait_completion(self):
@@ -91,26 +91,39 @@ class ParallelExecutor(Executor):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, num_threads):
+    def __init__(self, name, num_threads=10, status_notification_interval=2):
         Executor.__init__(self, name)
         self.num_threads = num_threads
         self.pool = ThreadPool(num_threads)
+        self.status_notification_interval = status_notification_interval
+        self.report["executor_type"] = "parallel"
 
     def pre_condition(self):
         """ Ensure all tests are children of the Thread class """
         pass
 
     def execute(self):
+        """ Execute tests in parallel """
         super(ParallelExecutor, self).execute()
         total_tests = len(self.infra_tests)
         for test in self.infra_tests:
             self.pool.add_task(test)
+
+        """ Monitor Execution of tests"""
         while self.pool.infra_tests_q.qsize() > 0:
             self.logger.debug("{executor} queue status: {completed}/{total}".format(
                 executor=self.name, total=total_tests,
                 completed=(total_tests - self.pool.infra_tests_q.qsize())))
-            time.sleep(2)
+            time.sleep(self.status_notification_interval)
         self.pool.wait_completion()
-        # Tests completed. Generate reports
-        reports = [test.report for test in self.infra_tests]
-        self.logger.api(json.dumps(reports, indent=4))
+
+        """ InfraTests Completed. Generate reports and prepare exit_code"""
+        test_reports = [test.report for test in self.infra_tests]
+        self.report['reports'] = test_reports
+        self.logger.api(json.dumps(self.report, indent=4))
+        exit_codes = [test.exit_code for test in self.infra_tests]
+        if 1 in exit_codes:
+            self.exit_code = 1
+        elif 3 in exit_codes:
+            self.exit_code = 3
+

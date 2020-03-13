@@ -78,7 +78,7 @@ class InfraTest:
         self.logger.info("{log_str} running".format(log_str=log_str))
         try:
             if self.run():  # test_passed
-                self.logger.info("{log_str} anpassed!".format(log_str=log_str))
+                self.logger.info("{log_str} passed!".format(log_str=log_str))
                 # handle warnings
                 if self.warn:
                     self.exit_code = 3
@@ -120,8 +120,9 @@ class Executor:
     def __init__(self, name):
         self.name = name
         self.logger = logging.getLogger(__name__)
-        self.reports = []
+        self.report = {"executor_name": self.name}
         self.infra_tests = []
+        self.exit_code = 0
 
     def execute(self):
         self.logger.info("Execution infrastructure tests for {name}".format(name=self.name))
@@ -129,6 +130,7 @@ class Executor:
         self.logger.info("Executor {name} has the following tests registered: {test_name_csv}".format(
             name=self.name,
             test_name_csv=test_name_csv))
+
 
     def register_infra_test(self, infra_test):
         self.infra_tests.append(infra_test)
