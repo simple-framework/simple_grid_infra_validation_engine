@@ -15,6 +15,8 @@ from infra_validation_engine.components.bolt import BoltInstallationTest, BoltCo
 from infra_validation_engine.components.docker import DockerInstallationTest, DockerServiceTest, DockerImageTest, \
     DockerContainerStatusTest
 from infra_validation_engine.components.swarm import *
+from infra_validation_engine.components.puppet import *
+from infra_validation_engine.components.ccm import *
 
 from infra_validation_engine.core import Stage, StageType
 from infra_validation_engine.core.executors import ParallelExecutor
@@ -65,6 +67,31 @@ class Test(Stage):
         #     SwarmOverlayNetworkTest(self.config_master_host['host'], self.config_master_host['fqdn'])
         # ])
 
+
+        self.infra_tests.extend([
+            PuppetAgentInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            PuppetAgentActiveTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            PuppetServerInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            PuppetServerActiveTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            PuppetModuleTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            PuppetSimpleDirTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            FileServerConfTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+        ])
+
+        for lc in self.lightweight_component_hosts:
+            self.infra_tests.extend([
+                PuppetConfTest(lc['host'], lc['fqdn'], self.config_master_host['host']),
+                PuppetAgentInstalledTest(lc['host'], lc['fqdn']),
+                PuppetAgentActiveTest(lc['host'], lc['fqdn']),
+                PuppetModuleTest(lc['host'], lc['fqdn']),
+            ])
+
+        self.infra_tests.extend([
+            SimpleConfDirTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+            AugSiteConfTest(self.config_master_host['host'], self.config_master_host['fqdn']),
+        ])
+
     # def execute(self):
     #     executor = TestExecutor("Test Executor",4, self.config_master_host, self.lightweight_component_hosts)
     #     executor.execute()
+
