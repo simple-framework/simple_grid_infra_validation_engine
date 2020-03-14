@@ -17,7 +17,18 @@ from infra_validation_engine.components.docker import DockerInstallationTest, Do
 from infra_validation_engine.components.swarm import *
 from infra_validation_engine.components.puppet import *
 from infra_validation_engine.components.ccm import *
+
 from infra_validation_engine.core import Stage, StageType
+from infra_validation_engine.core.executors import ParallelExecutor
+from infra_validation_engine.core.standard_tests import PackageIsInstalledTest
+
+
+class TestExecutor(ParallelExecutor):
+    def __init__(self, name, num_threads, cm_host_rep, lc_hosts_rep):
+        ParallelExecutor.__init__(self, name, num_threads)
+        self.register_infra_test(PackageIsInstalledTest("Git", "git", cm_host_rep['host'], cm_host_rep['fqdn']))
+        for lc in lc_hosts_rep:
+            self.register_infra_test(PackageIsInstalledTest("Git", "git", lc['host'], lc['fqdn']))
 
 
 class Test(Stage):
@@ -26,7 +37,15 @@ class Test(Stage):
     def __init__(self, config_master_host, lightweight_component_hosts):
         Stage.__init__(self, "Test", config_master_host, lightweight_component_hosts)
 
+    def pre_condition(self):
+        pass
+
+    def create_test_pipeline(self):
+        executor = TestExecutor("Test Executor", 4, self.config_master_host, self.lightweight_component_hosts)
+        self.executors.append(executor)
+
     def register_tests(self):
+        pass
         # self.infra_tests.extend([
         #     BoltInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']),
         #     BoltConfigurationDirectoryTest(self.config_master_host['host'], self.config_master_host['fqdn']),
@@ -47,6 +66,7 @@ class Test(Stage):
         #     SwarmDNSFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
         #     SwarmOverlayNetworkTest(self.config_master_host['host'], self.config_master_host['fqdn'])
         # ])
+
 
         self.infra_tests.extend([
             PuppetAgentInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
@@ -70,3 +90,8 @@ class Test(Stage):
             SimpleConfDirTest(self.config_master_host['host'], self.config_master_host['fqdn']),
             AugSiteConfTest(self.config_master_host['host'], self.config_master_host['fqdn']),
         ])
+
+    # def execute(self):
+    #     executor = TestExecutor("Test Executor",4, self.config_master_host, self.lightweight_component_hosts)
+    #     executor.execute()
+

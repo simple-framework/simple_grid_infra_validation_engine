@@ -60,3 +60,7 @@ class ServiceNotFoundError(Exception):
 class CommandExecutionError(Exception):
     """ Raised if a command could not be executed on a node """
     pass
+
+
+class PreConditionNotSatisfiedError(Exception):
+    """ Raised if a pre condition for an Executor fails"""
