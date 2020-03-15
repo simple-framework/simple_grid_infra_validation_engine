@@ -218,17 +218,20 @@ class Stage(PipelineElement):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, config_master_host, lightweight_component_hosts):
+    def __init__(self, name):
         PipelineElement.__init__(self, name, "Stage")
         self.name = name
-        self.config_master_host = config_master_host
-        self.lightweight_component_hosts = lightweight_component_hosts
         self.hard_error_pre_condition = True
-        self.create_pipeline()
 
     @abstractmethod
     def create_pipeline(self):
         pass
+
+    def pre_condition_handler(self):
+        return_status = super(Stage, self).pre_condition_handler()
+        if not return_status:
+            self.logger.api(json.dumps(self.report, indent=4))
+        return return_status
 
     def post_process(self):
         """ Generate report and update exit code"""

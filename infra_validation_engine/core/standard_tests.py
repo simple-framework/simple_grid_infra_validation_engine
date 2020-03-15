@@ -1,6 +1,6 @@
 from infra_validation_engine.core import InfraTest, InfraTestType
 from infra_validation_engine.core.exceptions import DirectoryNotFoundError, PackageNotFoundError, CommandExecutionError, \
-    ServiceNotRunningError, ServiceNotFoundError, FileNotFoundError
+    ServiceNotRunningError, ServiceNotFoundError, FileNotFoundError, PreConditionNotSatisfiedError, NetworkError
 
 
 class FileIsPresentTest(InfraTest):
@@ -88,7 +88,7 @@ class SystemdServiceIsActiveTest(InfraTest):
     If service is not enabled, it is raised as a warning
     """
 
-    def __init__(self, name, service, host, fqdn, check_enabled=False):
+    def __init__(self, name, service, host, fqdn, check_enabled=True):
         if check_enabled:
             description = "Check if systemd unit {svc} is active and enabled on {fqdn}".format(svc=service, fqdn=fqdn)
         else:
@@ -118,15 +118,17 @@ class SystemdServiceIsActiveTest(InfraTest):
             self.rc = 2
             self.err = "Service {svc} is not active on {fqdn}. ".format(svc=self.svc, fqdn=self.fqdn)
             return False
+        if self.check_enabled:
+            enabled_cmd_str = "systemctl is-enabled {svc}".format(svc=self.svc)
 
-        enabled_cmd_str = "systemctl is-enabled {svc}".format(svc=self.svc)
-
-        enabled_cmd = self.host.run(enabled_cmd_str)
-        if not enabled_cmd.succeeded:
-            self.warn = True
-            self.message = "Service {svc} is not enabled on {fqdn}. Is it active? {is_active}".format(svc=self.svc,
-                                                                                                      fqdn=self.fqdn,
-                                                                                               is_active=is_active)
+            enabled_cmd = self.host.run(enabled_cmd_str)
+            if not enabled_cmd.succeeded:
+                self.warn = True
+                self.message = "Service {svc} is not enabled on {fqdn}. Is it running? {is_active}".format(
+                    svc=self.svc,
+                    fqdn=self.fqdn,
+                    is_active=is_active)
+        return True
 
     def fail(self):
         if self.rc == 1:
@@ -159,5 +161,57 @@ class CommandExecutionTest(InfraTest):
             cmd=self.cmd_str, fqdn=self.fqdn, rc=self.rc, stdout=self.out, stderr=self.err)
         raise CommandExecutionError(err_msg)
 
+
+class PingTest(InfraTest):
+    """ Checks if a destination host can be pinged from a source host"""
+    __metaclass__ = InfraTestType
+
+    def __init__(self, name, destination, description, host, fqdn):
+        InfraTest.__init__(self, name, description, host, fqdn)
+        self.destination = destination
+
+    def pre_condition(self):
+        cmd =self.host.run("ping")
+        if cmd.rc == 127:
+            raise PreConditionNotSatisfiedError("Command 'ping' was not found on {fqdn}".format(fqdn=self.fqdn))
+
+    def run(self):
+        cmd_str = "ping {destination} -c 2".format(destination=self.destination)
+        cmd = self.host.run(cmd_str)
+        return cmd.rc == 0
+
+    def fail(self):
+        err_msg = "Host {dest} cannot be reached from {fqdn}".format(dest=self.destination, fqdn=self.fqdn)
+        raise NetworkError(err_msg)
+
+
+class SSHTest(InfraTest):
+    """ Check if a node can be connected via passwordless ssh from the host """
+    __metaclass__ = InfraTestType
+
+    def __init__(self, name, destination, description, host, fqdn, key):
+        InfraTest.__init__(self, name, description, host, fqdn)
+        self.destination = destination
+        self.key = key
+
+    def run(self):
+        cmd_str = "timeout 1 ssh -i {key} root@{dest}".format(key=self.key, dest=self.destination)
+        cmd = self.host.run(cmd_str)
+        self.rc = cmd.rc
+        self.out = cmd.stdout
+        self.err = cmd.stderr
+        return self.rc == 0
+
+    def fail(self):
+        if self.rc == 124:
+            raise NetworkError("Timeout occurred when trying to SSH as root to {dest} from {fqdn}."
+                               "Is password required for {key} or {dest} is not part of the known_hosts of {fqdn}"
+                               .format(dest=self.destination, fqdn=self.fqdn, key=self.key))
+        elif self.rc == 255:
+            raise NetworkError("Could not SSH as root to {dest} from {fqdn}. {dest}: Name or Serivce not known"
+                               .format(dest=self.destination, fqdn=self.fqdn))
+        else:
+            raise NetworkError("Could not SSH as root to {dest} from {fqdn}."
+                               .format(dest=self.destination, fqdn=self.fqdn))
 
 # class ProcessIsRunningTest()

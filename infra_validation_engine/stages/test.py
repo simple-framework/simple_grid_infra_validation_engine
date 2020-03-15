@@ -10,14 +10,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from infra_validation_engine.components.bolt import BoltInstallationTest, BoltConfigurationDirectoryTest, \
-    BoltConfigurationFileTest, BoltNetworkConfigurationTest
-from infra_validation_engine.components.docker import DockerInstallationTest, DockerServiceTest, DockerImageTest, \
-    DockerContainerStatusTest
-from infra_validation_engine.components.swarm import *
+from infra_validation_engine.infra_tests.components.swarm import *
 
-from infra_validation_engine.components.puppet import *
-from infra_validation_engine.components.ccm import *
+from infra_validation_engine.infra_tests.components.puppet import *
+from infra_validation_engine.infra_tests.components.ccm import *
 
 from infra_validation_engine.core import Stage, StageType
 from infra_validation_engine.core.executors import ParallelExecutor, SerialExecutor
@@ -45,7 +41,10 @@ class Test(Stage):
     __metaclass__ = StageType
 
     def __init__(self, config_master_host, lightweight_component_hosts):
-        Stage.__init__(self, "Test", config_master_host, lightweight_component_hosts)
+        Stage.__init__(self, "Test")
+        self.config_master_host = config_master_host
+        self.lightweight_component_hosts = lightweight_component_hosts
+        self.create_pipeline()
 
     def pre_condition(self):
         pass

@@ -66,7 +66,6 @@ class PuppetConfTest(InfraTest):
 
         self.cm_host = cm_host
 
-
     def run(self):
         return self.host.file(PuppetConstants.PUPPET_AGENT).contains(self.cm_host.check_output("hostname"))
 
