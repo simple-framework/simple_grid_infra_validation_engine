@@ -57,6 +57,18 @@ def cli(ctx):
 @click.option('--config-master', '-c',
               default='local://',
               help='FQDN of the Config Master node. Default is localhost.')
+@click.option('--identity-file', '-i',
+              default='~/.ssh/id_rsa',
+              type=click.STRING,
+              required=False,
+              help="The ssh key to be used for connecting to lightweight component hosts"
+              )
+@click.option('--num-threads', '-n',
+              type=click.INT,
+              default=10,
+              required=False,
+              help="Number of threads to spawn per element in the test pipeline"
+              )
 @click.option('--mode', '-m',
               type=click.Choice(['api', 'standalone'], case_sensitive=False),
               help="In API mode, output is JSON encoded. Default is standalone",
@@ -72,7 +84,7 @@ def cli(ctx):
                 nargs=-1,
                 type=click.Choice([x.lower() for x in Pool.get_all_stages()]),
                 )
-def validate(file, config_master, mode, verbose, targets, stages):
+def validate(file, config_master, identity_file, num_threads, mode, verbose, targets, stages):
     """
     Execute the infra validation engine for the SIMPLE Framework and validate the configuration of CM and LC hosts stage
     by stage.
@@ -120,7 +132,7 @@ def validate(file, config_master, mode, verbose, targets, stages):
         add_testinfra_host(host_rep)
 
     if 'pre_install' in stages:
-        pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, file, "~/.ssh/id_rsa", 4)
+        pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, file, identity_file, num_threads)
         pre_install_stage.execute()
         exit_code = pre_install_stage.exit_code
     elif 'test' in stages:
@@ -128,8 +140,6 @@ def validate(file, config_master, mode, verbose, targets, stages):
         exit_code = test_stage.execute()
 
     exit(exit_code)
-    # logger.api( "test")
-    # logger.api("test")
 
 
 @cli.command()
