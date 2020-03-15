@@ -120,7 +120,7 @@ def validate(file, config_master, mode, verbose, targets, stages):
         add_testinfra_host(host_rep)
 
     if 'pre_install' in stages:
-        pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, 4)
+        pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, file, "~/.ssh/id_rsa", 4)
         pre_install_stage.execute()
         exit_code = pre_install_stage.exit_code
     elif 'test' in stages:

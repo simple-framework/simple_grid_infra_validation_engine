@@ -227,6 +227,12 @@ class Stage(PipelineElement):
     def create_pipeline(self):
         pass
 
+    def pre_condition_handler(self):
+        return_status = super(Stage, self).pre_condition_handler()
+        if not return_status:
+            self.logger.api(json.dumps(self.report, indent=4))
+        return return_status
+
     def post_process(self):
         """ Generate report and update exit code"""
         super(Stage, self).post_process()
