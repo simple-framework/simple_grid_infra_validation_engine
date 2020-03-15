@@ -218,13 +218,10 @@ class Stage(PipelineElement):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, config_master_host, lightweight_component_hosts):
+    def __init__(self, name):
         PipelineElement.__init__(self, name, "Stage")
         self.name = name
-        self.config_master_host = config_master_host
-        self.lightweight_component_hosts = lightweight_component_hosts
         self.hard_error_pre_condition = True
-        self.create_pipeline()
 
     @abstractmethod
     def create_pipeline(self):

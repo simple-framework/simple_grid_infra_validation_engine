@@ -15,6 +15,7 @@ import sys
 import yaml
 import click
 from infra_validation_engine.core import Pool
+from stages.pre_install import Pre_Install
 from stages.install import Install
 from stages.test import Test
 from utils import get_lightweight_component_hosts, get_host_representation, add_testinfra_host
@@ -118,9 +119,9 @@ def validate(file, config_master, mode, verbose, targets, stages):
     for host_rep in all_hosts_rep[1:]:
         add_testinfra_host(host_rep)
 
-    if 'install' in stages:
-        install_stage = Install(cm_host_rep, lc_hosts_rep)
-        exit_code = install_stage.execute()
+    if 'pre_install' in stages:
+        pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, 4)
+        exit_code = pre_install_stage.execute()
     elif 'test' in stages:
         test_stage = Test(cm_host_rep, lc_hosts_rep)
         exit_code = test_stage.execute()
