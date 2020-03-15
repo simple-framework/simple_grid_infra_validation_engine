@@ -45,6 +45,28 @@ class Pool:
         return Pool.stages
 
 
+class Executable:
+    """ Pipeline elements that can be executed """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, name, type, parent):
+        self.name = name
+        self.type = type #InfraTest, HorizontalExecutor, VerticalExecutor
+        self.parent = parent
+
+    @abstractmethod
+    def pre_condition(self):
+        pass
+
+    @abstractmethod
+    def run(self):
+        pass
+
+    @abstractmethod
+    def execute(self):
+        pass
+
+
 class InfraTest:
     """
     Exit_Code : 1,4,8::pass,pass+warn,error #someday
@@ -117,7 +139,7 @@ class InfraTest:
 
 class Executor:
     """
-    An abstract executor for InfraTests
+    An abstract executor for InfraTests and Executors
     """
     __metaclass__ = ABCMeta
 
@@ -126,6 +148,7 @@ class Executor:
         self.logger = logging.getLogger(__name__)
         self.report = OrderedDict({"executor_name": self.name, "result": ''})
         self.infra_tests = []
+        self.pipeline = []
         self.exit_code = 0
         self.hard_error_pre_condition = True
 
@@ -138,41 +161,48 @@ class Executor:
         """ Gather Info needed before running tests. Fail if the info is not available """
         pass
 
+    def pre_condition_handler(self):
+        return_status = False
+        try:
+            self.pre_condition()
+            return_status = True
+        except PreConditionNotSatisfiedError as err:
+            if self.hard_error_pre_condition:
+                self.logger.error("The pre condition check for Executor {name} was not satisfied. "
+                                  "Therefore, the execution of the following tests is being skipped: {tests}".format(
+                    name=self.name,
+                    tests=', '.join(
+                        ["{test} on {fqdn}".format(test=x.name, fqdn=x.fqdn) for x in self.infra_tests]
+                    )))
+                self.report["result"] = "exec_fail"
+                self.exit_code = 1
+            else:
+                self.logger.warning("The pre condition check for Executor {name} was not satisfied. "
+                                    "However, we are continuing the execution of the tests")
+                self.exit_code = 4  # pre_condition failed
+                return_status = True
+            self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
+            self.report["error"] = err.message
+            self.report["trace"] = traceback.format_exc()
+            self.report["exit_code"] = self.exit_code
+
+        return return_status
+
     @abstractmethod
     def run(self):
         """ Run the Tests """
         pass
 
     def execute(self):
-        try:
-            self.pre_condition()
-        except PreConditionNotSatisfiedError as err:
-            if self.hard_error_pre_condition:
-                self.logger.error("The pre condition check for Executor {name} was not satisfied. "
-                                  "Therefore, the execution of the following tests is being skipped: {tests}".format(
-                                    name=self.name,
-                                    tests=', '.join(
-                                        ["{test} on {fqdn}".format(test=x.name, fqdn=x.fqdn) for x in self.infra_tests]
-                                    )))
-                self.report["result"] = "exec_fail"
-                self.exit_code = 1
-            else:
-                self.logger.warning("The pre condition check for Executor {name} was not satisfied. "
-                                    "However, we are continuing the execution of the tests")
-                self.exit_code = 4 # pre_condition failed
-            self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
-            self.report["error"] = err.message
-            self.report["trace"] = traceback.format_exc()
-            self.report["exit_code"] = self.exit_code
-
-            if self.hard_error_pre_condition:
-                return
+        if not self.pre_condition_handler():
+            self.logger.error("Pre condition failed")
+            return
         # Ready to run tests
-        self.logger.info("Executing infrastructure tests for Executor {name}".format(name=self.name))
-        test_name_csv = ', '.join([test.name for test in self.infra_tests])
-        self.logger.info("Executor {name} has the following tests registered: {test_name_csv}".format(
+        self.logger.info("Running Executor: {name}".format(name=self.name))
+        pipeline_csv = ', '.join([pipeline_element.name for pipeline_element in self.pipeline])
+        self.logger.info("Executor {name} has the following pipeline elements registered: {pipeline_csv}".format(
             name=self.name,
-            test_name_csv=test_name_csv))
+            pipeline_csv=pipeline_csv))
         self.run()
         # Update report
         self.post_process()

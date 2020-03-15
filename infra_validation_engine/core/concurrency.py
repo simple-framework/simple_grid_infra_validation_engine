@@ -38,27 +38,25 @@ class Worker(Thread):
     def run(self):
         logger.debug("{worker}: Started \n".format(worker=self.name))
         while True:
-            infra_test = self.tasks.get()
-            infra_test.report["executor_thread"] = self.name
+            pipeline_element = self.tasks.get()
+            # infra_test = self.tasks.get()
+            pipeline_element.report["executor_thread"] = self.name
             try:
-                infra_test.execute()
+                pipeline_element.execute()
             except Exception as e:
                 # An exception happened in this thread
-                err_msg = "Error during parallel execution of {test} on {fqdn}".format(test=infra_test.name,
-                                                                                       fqdn=infra_test.fqdn)
+                err_msg = "Error during parallel execution of {element}".format(element=pipeline_element.name)
                 logger.error("{worker}: {err_msg}".format(worker=self.name, err_msg=err_msg))
-                logger.debug("{worker}: {error} occurred when running {test} on  {fqdn}".format(worker=self.name,
-                                                                                                error=type(e),
-                                                                                                test=infra_test.name,
-                                                                                                fqdn=infra_test.fqdn
-                                                                                                ), exc_info=True)
+                logger.debug("{worker}: {error} occurred when executing {element}".format(worker=self.name,
+                                                                                          error=type(e),
+                                                                                          element=pipeline_element.name,
+                                                                                          ), exc_info=True)
             finally:
                 # Mark this task as done, whether an exception happened or not
-                logger.debug("{worker}: Dequeue {test} for {fqdn}. Test exit code was: {code}".format(
+                logger.debug("{worker}: Dequeue {element}. Test exit code was: {code}".format(
                     worker=self.name,
-                    test=infra_test.name,
-                    fqdn=infra_test.fqdn,
-                    code=infra_test.exit_code))
+                    element=pipeline_element.name,
+                    code=pipeline_element.exit_code))
                 self.tasks.task_done()
 
 
@@ -70,6 +68,9 @@ class ThreadPool:
         self.workers = []
         for _ in range(num_threads):
             self.workers.append(Worker(self.infra_tests_q))
+
+    def add_worker(self):
+        self.workers.append(Worker(self.infra_tests_q))
 
     def add_task(self, infra_test):
         """ Add a task to the queue """

@@ -19,16 +19,16 @@ from infra_validation_engine.components.puppet import *
 from infra_validation_engine.components.ccm import *
 
 from infra_validation_engine.core import Stage, StageType
-from infra_validation_engine.core.executors import ParallelExecutor
+from infra_validation_engine.core.executors import ParallelExecutor, VerticalExecutor
 from infra_validation_engine.core.standard_tests import PackageIsInstalledTest
 
 
-class TestExecutor(ParallelExecutor):
+class TestExecutor(VerticalExecutor):
     def __init__(self, name, num_threads, cm_host_rep, lc_hosts_rep):
-        ParallelExecutor.__init__(self, name, num_threads)
-        self.register_infra_test(PackageIsInstalledTest("Git", "git", cm_host_rep['host'], cm_host_rep['fqdn']))
+        VerticalExecutor.__init__(self, name, num_threads)
+        self.pipeline.append(PackageIsInstalledTest("Git", "git", cm_host_rep['host'], cm_host_rep['fqdn']))
         for lc in lc_hosts_rep:
-            self.register_infra_test(PackageIsInstalledTest("Git", "git", lc['host'], lc['fqdn']))
+            self.pipeline.append(PackageIsInstalledTest("Git", "git", lc['host'], lc['fqdn']))
 
 
 class Test(Stage):
