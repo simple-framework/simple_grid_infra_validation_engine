@@ -20,25 +20,25 @@ from infra_validation_engine.components.puppet import *
 from infra_validation_engine.components.ccm import *
 
 from infra_validation_engine.core import Stage, StageType
-from infra_validation_engine.core.executors import VerticalExecutor, HorizontalExecutor
+from infra_validation_engine.core.executors import ParallelExecutor, SerialExecutor
 from infra_validation_engine.core.standard_tests import PackageIsInstalledTest
 
 
-class TestHorizontalExecutor(HorizontalExecutor):
+class TestHorizontalExecutor(SerialExecutor):
     def __init__(self, host_rep):
-        HorizontalExecutor.__init__(self, "Node Package Tasks")
+        SerialExecutor.__init__(self, "Node Package Tasks")
         host = host_rep['host']
         fqdn = host_rep['fqdn']
-        self.pipeline.append(PackageIsInstalledTest("Git Installation Test", "git", host, fqdn))
-        self.pipeline.append(PackageIsInstalledTest("Docker Installation Test", "docker-ce", host, fqdn))
+        self.append_to_pipeline(PackageIsInstalledTest("Git Installation Test", "git", host, fqdn))
+        self.append_to_pipeline(PackageIsInstalledTest("Docker Installation Test", "docker-ce", host, fqdn))
 
 
-class TestExecutor(VerticalExecutor):
+class TestExecutor(ParallelExecutor):
     def __init__(self, name, num_threads, cm_host_rep, lc_hosts_rep):
-        VerticalExecutor.__init__(self, name, num_threads)
-        self.pipeline.append(TestHorizontalExecutor(cm_host_rep))
+        ParallelExecutor.__init__(self, name, num_threads)
+        self.append_to_pipeline(TestHorizontalExecutor(cm_host_rep))
         for lc in lc_hosts_rep:
-            self.pipeline.append(TestHorizontalExecutor(lc))
+            self.append_to_pipeline(TestHorizontalExecutor(lc))
 
 
 class Test(Stage):
@@ -50,9 +50,9 @@ class Test(Stage):
     def pre_condition(self):
         pass
 
-    def create_test_pipeline(self):
+    def create_pipeline(self):
         executor = TestExecutor("Test Executor", 4, self.config_master_host, self.lightweight_component_hosts)
-        self.executors.append(executor)
+        self.append_to_pipeline(executor)
 
     def register_tests(self):
         pass

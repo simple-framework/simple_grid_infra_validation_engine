@@ -45,38 +45,109 @@ class Pool:
         return Pool.stages
 
 
-class Executable:
+class PipelineElement:
     """ Pipeline elements that can be executed """
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, type, parent):
+    def __init__(self, name, executable_type):
         self.name = name
-        self.type = type #InfraTest, HorizontalExecutor, VerticalExecutor
-        self.parent = parent
+        self.type = executable_type #InfraTest, Executor, Stage, HorizontalExecutor, VerticalExecutor
+        self.pipeline_elements = []
+        self.exit_code = 0
+        self.report = OrderedDict({'name': self.name, 'result': '', 'type': self.type})
+        self.logger = logging.getLogger(__name__)
+        self.hard_error_pre_condition = True
 
-    @abstractmethod
+    def append_to_pipeline(self, pipeline_element):
+        self.pipeline_elements.append(pipeline_element)
+
+    def extend_pipeline(self, pipeline_elements):
+        for pipeline_element in pipeline_elements:
+            self.append_to_pipeline(pipeline_element)
+
     def pre_condition(self):
+        """
+        Override if certain checks need to be performed before executing the pipeline.
+        Copy artifacts etc.
+        """
         pass
 
-    @abstractmethod
+    def pre_condition_handler(self):
+        return_status = False
+        try:
+            self.pre_condition()
+            return_status = True
+        except PreConditionNotSatisfiedError as err:
+            if self.hard_error_pre_condition:
+                self.logger.error("The pre condition check for {type} {name} was not satisfied. "
+                                  "Therefore, the execution of the following pipeline elements is "
+                                  "being skipped: {elements}".format(
+                    name=self.name,
+                    type=self.type,
+                    elements=', '.join(
+                        ["{element}".format(element=element) for element in self.pipeline_elements]
+                    )))
+                self.report["result"] = "exec_fail"
+                self.exit_code = 1
+            else:
+                self.logger.warning("The pre condition check for {type} {name} was not satisfied. "
+                                    "However, we are continuing the execution of the tests".
+                                    format(name=self.name,type=self.type))
+                self.exit_code = 4  # pre_condition failed
+                return_status = True
+            self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
+            self.report["error"] = err.message
+            self.report["trace"] = traceback.format_exc()
+            self.report["exit_code"] = self.exit_code
+
+        return return_status
+
     def run(self):
-        pass
+        for element in self.pipeline_elements:
+            element.execute()
 
-    @abstractmethod
     def execute(self):
-        pass
+        if not self.pre_condition_handler():
+            self.logger.error("Pre condition failed for {type}: {name}".format(name=self.name, type=self.type))
+            return
+        self.logger.info("Executing Pipeline for {type} {name}".format(name=self.name, type=self.type))
+        pipeline_elements_csv = ', '.join([element.name for element in self.pipeline_elements])
+        self.logger.info("{type} {name} has the following pipeline elements registered: {pipeline_elements}".format(
+            name=self.name,
+            type=self.type,
+            pipeline_elements=pipeline_elements_csv))
+        self.run()
+        # Update report
+        self.post_process()
+
+    def post_process(self):
+        """ Generate Report and update Exit Code """
+        pipeline_reports = [element.report for element in self.pipeline_elements]
+        self.report['total_elements'] = len(pipeline_reports)
+        self.report['element_reports'] = pipeline_reports
+        exit_codes = set([test.exit_code for test in self.pipeline_elements])
+        if self.exit_code == 4:
+            self.report["result"] = "pre condition failed! "
+        if 1 in exit_codes:
+            self.exit_code = 1
+            self.report["result"] += "some or all tests fail"  # switch to codes someday
+        elif 3 in exit_codes:
+            self.exit_code = 3
+            self.report["result"] += "warnings present"
+        else:
+            self.report["result"] += "all tests passed"
 
 
-class InfraTest:
+class InfraTest(PipelineElement):
     """
     Exit_Code : 1,4,8::pass,pass+warn,error #someday
     """
     __metaclass__ = ABCMeta
 
     def __init__(self, name, description, host, fqdn):
-        self.host = host
-        self.name = name
+        PipelineElement.__init__(self, name, "InfraTest")
         self.description = description
+        self.host = host
         self.fqdn = fqdn
         self.rc = -1
         self.err = None
@@ -84,8 +155,7 @@ class InfraTest:
         # If message is specified, it will be present in report and output in api/standalone modes
         self.message = None
         self.warn = False
-        self.logger = logging.getLogger(__name__)
-        self.report = self.report = {'name': self.name, 'description': self.description, 'result': 'fail'}
+        self.report['description'] = self.description
         self.exit_code = 0
 
     @abstractmethod
@@ -137,172 +207,26 @@ class InfraTest:
         # self.report['exit_code'] = self.exit_code
 
 
-class Executor:
-    """
-    An abstract executor for InfraTests and Executors
-    """
-    __metaclass__ = ABCMeta
-
-    def __init__(self, name):
-        self.name = name
-        self.logger = logging.getLogger(__name__)
-        self.report = OrderedDict({"executor_name": self.name, "result": ''})
-        self.pipeline = []
-        self.exit_code = 0
-        self.hard_error_pre_condition = True
-
-    @abstractmethod
-    def pre_condition(self):
-        """ Gather Info needed before running tests. Fail if the info is not available """
-        pass
-
-    def pre_condition_handler(self):
-        return_status = False
-        try:
-            self.pre_condition()
-            return_status = True
-        except PreConditionNotSatisfiedError as err:
-            if self.hard_error_pre_condition:
-                self.logger.error("The pre condition check for Executor {name} was not satisfied. "
-                                  "Therefore, the execution of the following tests is being skipped: {tests}".format(
-                    name=self.name,
-                    tests=', '.join(
-                        ["{test} on {fqdn}".format(test=x.name, fqdn=x.fqdn) for x in self.infra_tests]
-                    )))
-                self.report["result"] = "exec_fail"
-                self.exit_code = 1
-            else:
-                self.logger.warning("The pre condition check for Executor {name} was not satisfied. "
-                                    "However, we are continuing the execution of the tests")
-                self.exit_code = 4  # pre_condition failed
-                return_status = True
-            self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
-            self.report["error"] = err.message
-            self.report["trace"] = traceback.format_exc()
-            self.report["exit_code"] = self.exit_code
-
-        return return_status
-
-    @abstractmethod
-    def run(self):
-        """ Run the Tests """
-        pass
-
-    def execute(self):
-        if not self.pre_condition_handler():
-            self.logger.error("Pre condition failed for Executor: {name}".format(name=self.name))
-            return
-        # Ready to run tests
-        self.logger.info("Running Executor: {name}".format(name=self.name))
-        pipeline_csv = ', '.join([pipeline_element.name for pipeline_element in self.pipeline])
-        self.logger.info("Executor {name} has the following pipeline elements registered: {pipeline_csv}".format(
-            name=self.name,
-            pipeline_csv=pipeline_csv))
-        self.run()
-        # Update report
-        self.post_process()
-
-    def post_process(self):
-        """ Generate Report and update Exit Code """
-        pipeline_reports = [element.report for element in self.pipeline]
-        self.report['total_elements'] = len(pipeline_reports)
-        self.report['element_reports'] = pipeline_reports
-        exit_codes = set([test.exit_code for test in self.pipeline])
-        if self.exit_code == 4:
-            self.report["result"] = "pre condition failed! "
-        if 1 in exit_codes:
-            self.exit_code = 1
-            self.report["result"] += "some or all tests fail" #switch to codes someday
-        elif 3 in exit_codes:
-            self.exit_code = 3
-            self.report["result"] += "warnings present"
-        else:
-            self.report["result"] += "all tests passed"
-
-        # self.logger.api(json.dumps(self.report, indent=4))
-
-
-class Stage:
+class Stage(PipelineElement):
     """ Serial executor of composition of SerialExecutors, ParallelExecutors"""
 
     __metaclass__ = ABCMeta
 
     def __init__(self, name, config_master_host, lightweight_component_hosts):
+        PipelineElement.__init__(self, name, "Stage")
         self.name = name
         self.config_master_host = config_master_host
         self.lightweight_component_hosts = lightweight_component_hosts
-        self.logger = logging.getLogger(__name__)
-        self.executors = deque()
-        self.create_test_pipeline()
-        self.report = OrderedDict({"stage_name": self.name, "result": ''})
         self.hard_error_pre_condition = True
-        self.exit_code = 0
+        self.create_pipeline()
 
     @abstractmethod
-    def create_test_pipeline(self):
+    def create_pipeline(self):
         pass
-
-    @abstractmethod
-    def pre_condition(self):
-        pass
-
-    def run(self):
-        for executor in self.executors:
-            executor.execute()
-
-    def execute(self):
-        try:
-            self.pre_condition()
-        except PreConditionNotSatisfiedError as err:
-            if self.hard_error_pre_condition:
-                self.logger.error("The pre condition check for Executor {name} was not satisfied. "
-                                  "Therefore, the execution of the following tests is being skipped: {tests}".format(
-                    name=self.name,
-                    tests=', '.join(
-                        ["{test} on {fqdn}".format(test=x.name, fqdn=x.fqdn) for x in self.infra_tests]
-                    )))
-                self.report["result"] = "exec_fail"
-                self.exit_code = 1
-            else:
-                self.logger.warning("The pre condition check for Executor {name} was not satisfied. "
-                                    "However, we are continuing the execution of the tests")
-                self.exit_code = 4  # pre_condition failed
-            self.logger.info("Exception info: {error}".format(error=err.message), exc_info=True)
-            self.report["error"] = err.message
-            self.report["trace"] = traceback.format_exc()
-            self.report["exit_code"] = self.exit_code
-
-            if self.hard_error_pre_condition:
-                return
-
-        # Ready to run tests
-        self.logger.info("Executing Test Pipeline for Stage {name}".format(name=self.name))
-        executor_name_csv = ', '.join([executor.name for executor in self.executors])
-        self.logger.info("Stage {name} has the following executors registered: {executor_name_csv}".format(
-            name=self.name,
-            executor_name_csv=executor_name_csv))
-        self.run()
-        # Update report
-        self.post_process()
 
     def post_process(self):
         """ Generate report and update exit code"""
-        executor_reports = [executor.report for executor in self.executors]
-        self.report['total_executors'] = len(executor_reports)
-        self.report['executor_reports'] = executor_reports
-        exit_codes = set([executor.exit_code for executor in self.executors])
-
-        if self.exit_code == 4:
-            self.report["result"] = "pre condition failed! "
-        if 1 in exit_codes:
-            self.exit_code = 1
-            self.report["result"] += "some or all executors fail" #switch to codes someday
-        elif 3 in exit_codes:
-            self.exit_code = 3
-            self.report["result"] += "warnings present"
-        else:
-            self.report["result"] += "all executors passed"
-
+        super(Stage, self).post_process()
         self.logger.api(json.dumps(self.report, indent=4))
 
 
