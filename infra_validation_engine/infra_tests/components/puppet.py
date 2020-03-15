@@ -3,7 +3,8 @@ import re
 from infra_validation_engine.core import InfraTest, InfraTestType
 from infra_validation_engine.utils.constants import Constants
 from infra_validation_engine.core.standard_tests import (PackageIsInstalledTest, SystemdServiceIsActiveTest,
-                                                         DirectoryIsPresentTest, FileIsPresentTest)
+                                                         DirectoryIsPresentTest, FileIsPresentTest,
+                                                         CommandExecutionTest)
 from infra_validation_engine.core.exceptions import FileContentsMismatchError
 
 
@@ -13,43 +14,44 @@ class PuppetConstants(Constants):
     PUPPET_SERVER_PKG_NAME = "puppetserver"
     PUPPET_SERVER_SVC_NAME = "puppetserver"
     PUPPET_MODULE_NAME = "maany-simple_grid"
-    PUPPET_SIMPLE_DIR = "/etc/puppetlabs/code/environments/simple"
+    SIMPLE_PUPPET_ENV_DIR = "/etc/puppetlabs/code/environments/simple/manifests"
+    PUPPET_PORT = 8140
 
 
 class PuppetModuleNotInstalledError(Exception):
     pass
 
 
-class PuppetAgentInstalledTest(PackageIsInstalledTest):
+class PuppetAgentInstallationTest(PackageIsInstalledTest):
     """Puppet agent package is installed Test"""
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        PackageIsInstalledTest.__init__(self, "Puppet agent installed Test", PuppetConstants.PUPPET_AGENT_PKG_NAME, host, fqdn)
+        PackageIsInstalledTest.__init__(self, "Puppet Agent Installation Test", PuppetConstants.PUPPET_AGENT_PKG_NAME, host, fqdn)
 
 
-class PuppetAgentActiveTest(SystemdServiceIsActiveTest):
+class PuppetServiceTest(SystemdServiceIsActiveTest):
     """Puppet agent package is active Test"""
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        SystemdServiceIsActiveTest.__init__(self, "Puppet agent running Test", PuppetConstants.PUPPET_AGENT_SVC_NAME, host, fqdn)
+        SystemdServiceIsActiveTest.__init__(self, "Puppet Agent Service Test", PuppetConstants.PUPPET_AGENT_SVC_NAME, host, fqdn)
 
 
-class PuppetServerInstalledTest(PackageIsInstalledTest):
+class PuppetServerInstallationTest(PackageIsInstalledTest):
     """Puppet server package is installed Test"""
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        PackageIsInstalledTest.__init__(self, "Puppet server installed Test", PuppetConstants.PUPPET_SERVER_PKG_NAME, host, fqdn)
+        PackageIsInstalledTest.__init__(self, "Puppet Server Installation Test", PuppetConstants.PUPPET_SERVER_PKG_NAME, host, fqdn)
 
 
-class PuppetServerActiveTest(SystemdServiceIsActiveTest):
+class PuppetServerServiceTest(SystemdServiceIsActiveTest):
     """Puppet server package is active Test"""
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        SystemdServiceIsActiveTest.__init__(self, "Puppet server running Test", PuppetConstants.PUPPET_SERVER_SVC_NAME, host, fqdn)
+        SystemdServiceIsActiveTest.__init__(self, "Puppet Server Service Test", PuppetConstants.PUPPET_SERVER_SVC_NAME, host, fqdn)
 
 
 class PuppetConfTest(InfraTest):
@@ -58,7 +60,7 @@ class PuppetConfTest(InfraTest):
 
     def __init__(self, host, fqdn, cm_host):
         InfraTest.__init__(self,
-                           "Puppet agent configuration Test",
+                           "Puppet Agent Configuration Test",
                            "Check if {file} is installed on {fqdn}".format(file=PuppetConstants.PUPPET_AGENT,
                                                                            fqdn=fqdn),
                            host,
@@ -81,7 +83,7 @@ class PuppetModuleTest(InfraTest):
 
     def __init__(self, host, fqdn):
         InfraTest.__init__(self,
-                           "Puppet module Test",
+                           "SIMPLE Puppet Module Test",
                            "Check if puppet module is installed on {fqdn}".format(fqdn=fqdn),
                            host, fqdn)
 
@@ -99,17 +101,28 @@ class PuppetModuleTest(InfraTest):
         return PuppetModuleNotInstalledError(err_msg)
 
 
-class PuppetSimpleDirTest(DirectoryIsPresentTest):
+class SimplePuppetEnvTest(FileIsPresentTest):
     """Puppet SIMPLE dir is present Test"""
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        DirectoryIsPresentTest.__init__(self, "SIMPLE directory Test", PuppetConstants.PUPPET_SIMPLE_DIR, host, fqdn)
+        site_manifest = "{module_dir}/site.pp".format(module_dir=PuppetConstants.SIMPLE_PUPPET_ENV_DIR)
+        FileIsPresentTest.__init__(self, "SIMPLE Puppet Env Test", site_manifest, host, fqdn)
 
 
-class FileServerConfTest(FileIsPresentTest):
+class PuppetFileServerConfTest(FileIsPresentTest):
     """File Server config file is present Test"""
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        FileIsPresentTest.__init__(self, "File server config file Test", PuppetConstants.FILESERVER_CONFIG_FILE, host, fqdn)
+        FileIsPresentTest.__init__(self, "Puppet File Server Config File Test", PuppetConstants.FILESERVER_CONFIG_FILE, host, fqdn)
+
+
+class PuppetFirewallPortTest(CommandExecutionTest):
+    """ Check if port 8140 is open """
+    def __init__(self, host, fqdn):
+        CommandExecutionTest.__init__(self, "Puppet Server Firewall Test",
+                                      "iptables -L | grep {port}".format(port=PuppetConstants.PUPPET_PORT),
+                                      "Check if port {port} config exists in iptables".format(port=PuppetConstants.PUPPET_PORT),
+                                      host,
+                                      fqdn)

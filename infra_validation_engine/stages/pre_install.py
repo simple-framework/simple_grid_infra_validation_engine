@@ -19,8 +19,8 @@ from infra_validation_engine.core import Stage, StageType
 from infra_validation_engine.core.exceptions import PreConditionNotSatisfiedError
 from infra_validation_engine.core.executors import ParallelExecutor, SerialExecutor
 from infra_validation_engine.core.standard_tests import PingTest, SSHTest, FileIsPresentTest
-from infra_validation_engine.infra_tests.components.puppet import PuppetAgentInstalledTest, PuppetAgentActiveTest, \
-    PuppetServerInstalledTest, PuppetServerActiveTest, PuppetConfTest, PuppetModuleTest
+from infra_validation_engine.infra_tests.components.puppet import PuppetAgentInstallationTest, PuppetServiceTest, \
+    PuppetServerInstallationTest, PuppetModuleTest
 from infra_validation_engine.utils.constants import ComponentRepositoryConstants
 
 
@@ -96,10 +96,11 @@ class PuppetValidator(ParallelExecutor):
 
     def create_pipeline(self):
         for node in self.all_hosts:
-            self.append_to_pipeline(PuppetAgentInstalledTest(
-                node['host'],
-                node['fqdn']
-            ))
+            self.extend_pipeline([
+                PuppetAgentInstallationTest(node['host'], node['fqdn']),
+                PuppetServiceTest(node['host'], node['fqdn']),
+                PuppetModuleTest(node['host'], node['fqdn'])
+            ])
 
 
 class PreInstallParallelExecutor(ParallelExecutor):
@@ -124,7 +125,11 @@ class PreInstallParallelExecutor(ParallelExecutor):
         self.extend_pipeline([
             NetworkValidator(self.cm_rep, self.lc_rep, self.key, self.num_threads),
             PuppetValidator(self.cm_rep, self.lc_rep, self.num_threads),
-            PuppetServerInstalledTest(self.host, self.fqdn)
+            PuppetServerInstallationTest(self.host, self.fqdn),
+            FileIsPresentTest("Site Level Config File Test",
+                              "{site_config}".format(site_config=ComponentRepositoryConstants.SITE_LEVEL_CONFIG_FILE),
+                              self.host,
+                              self.fqdn)
         ])
         for cert_dir in self.host_cert_dirs:
             self.extend_pipeline([

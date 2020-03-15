@@ -12,8 +12,11 @@
 # limitations under the License.
 import re
 from infra_validation_engine.core import InfraTestType, InfraTest
+from infra_validation_engine.core.standard_tests import PackageIsInstalledTest, DirectoryIsPresentTest, \
+    FileIsPresentTest
 from infra_validation_engine.utils.constants import Constants
-from infra_validation_engine.core.exceptions import PackageNotFoundError, DirectoryNotFoundError, FileNotFoundError, NetworkError
+from infra_validation_engine.core.exceptions import PackageNotFoundError, DirectoryNotFoundError, FileNotFoundError, \
+    NetworkError
 
 
 class BoltConstants(Constants):
@@ -22,82 +25,51 @@ class BoltConstants(Constants):
     BOLT_CONFIG_FILE = "{BOLT_CONFIG_DIRECTORY}/bolt.yaml".format(BOLT_CONFIG_DIRECTORY=BOLT_CONFIG_DIRECTORY)
 
 
-class BoltInstallationTest(InfraTest):
+class BoltInstallationTest(PackageIsInstalledTest):
     """
     Check if Bolt is installed
     """
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        InfraTest.__init__(self,
-                           "Bolt Installation Test",
-                           "Check if {pkg} is installed on {fqdn}".format(pkg=BoltConstants.BOLT_PKG_NAME, fqdn=fqdn),
-                           host,
-                           fqdn)
-
-    def run(self):
-        cmd = self.host.run("bolt --version")
-
-        return cmd.rc == 0
-
-    def fail(self):
-        err_msg = "Package {pkg} is not installed on {fqdn}".format(pkg=BoltConstants.BOLT_PKG_NAME, fqdn=self.fqdn)
-
-        raise PackageNotFoundError(err_msg)
+        PackageIsInstalledTest.__init__(self,
+                                        "Bolt Installation Test",
+                                        "puppet-bolt",
+                                        host,
+                                        fqdn)
 
 
-class BoltConfigurationDirectoryTest(InfraTest):
+class BoltConfigurationDirectoryTest(DirectoryIsPresentTest):
     """
     Checks if Bolt config dir is present
     """
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        InfraTest.__init__(self,
-                           "Bolt Configuration Directory Test",
-                           "Check if {bolt_dir} is present on {fqdn}".format(
-                               bolt_dir=BoltConstants.BOLT_CONFIG_DIRECTORY, fqdn=fqdn),
-                           host,
-                           fqdn)
-
-    def run(self):
-        return self.host.file(BoltConstants.BOLT_CONFIG_DIRECTORY).is_directory
-
-    def fail(self):
-        err_msg = "Directory {bolt_dir} is absent on {fqdn}.".format(
-            bolt_dir=BoltConstants.BOLT_CONFIG_DIRECTORY, fqdn=self.fqdn)
-
-        raise DirectoryNotFoundError(err_msg)
+        DirectoryIsPresentTest.__init__(self,
+                                        "Bolt Configuration Directory Test",
+                                        BoltConstants.BOLT_CONFIG_DIRECTORY,
+                                        host,
+                                        fqdn)
 
 
-class BoltConfigurationFileTest(InfraTest):
+class BoltConfigurationFileTest(FileIsPresentTest):
     """
     Check if Bolt Config File is present
     """
     __metaclass__ = InfraTestType
 
     def __init__(self, host, fqdn):
-        InfraTest.__init__(self,
-                           "Bolt Configuration File Test",
-                           "Check if {bolt_config} is present on {fqdn}".format(
-                               bolt_config=BoltConstants.BOLT_CONFIG_FILE,
-                               fqdn=fqdn
-                           ),
-                           host,
-                           fqdn)
-
-    def run(self):
-        return self.host.file(BoltConstants.BOLT_CONFIG_FILE).exists
-
-    def fail(self):
-        err_msg = "File {bolt_config} is absent on {fqdn}.".format(
-            bolt_config=BoltConstants.BOLT_CONFIG_FILE, fqdn=self.fqdn)
-        raise FileNotFoundError(err_msg)
+        FileIsPresentTest.__init__(self,
+                                   "Bolt Configuration File Test",
+                                   BoltConstants.BOLT_CONFIG_FILE,
+                                   host,
+                                   fqdn)
 
 
 class BoltNetworkConfigurationTest(InfraTest):
     """
-    Check if Bolt can connect to all LCs
+    Check if Bolt can connect to all LCs. Bolt is parallel by design, so leverage that
     """
     __metaclass__ = InfraTestType
 
@@ -136,4 +108,3 @@ class BoltNetworkConfigurationTest(InfraTest):
                 target = search.group(1)
                 failed_targets.append(target)
         return failed_targets
-

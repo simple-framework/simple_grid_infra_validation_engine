@@ -130,16 +130,25 @@ def validate(file, config_master, identity_file, num_threads, mode, verbose, tar
     add_testinfra_host(cm_host_rep)
     for host_rep in all_hosts_rep[1:]:
         add_testinfra_host(host_rep)
-
+    exit_codes = []
     if 'pre_install' in stages:
         pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, file, identity_file, num_threads)
         pre_install_stage.execute()
-        exit_code = pre_install_stage.exit_code
-    elif 'test' in stages:
+        exit_codes.append(pre_install_stage.exit_code)
+    if 'install' in stages:
+        install_stage = Install(cm_host_rep, lc_hosts_rep, num_threads)
+        install_stage.execute()
+        exit_codes.append(install_stage.exit_code)
+    if 'test' in stages:
         test_stage = Test(cm_host_rep, lc_hosts_rep)
         exit_code = test_stage.execute()
-
-    exit(exit_code)
+    unique_exit_codes = set(exit_codes)
+    if 1 in unique_exit_codes:
+        exit(1)
+    elif 3 in unique_exit_codes:
+        exit(3)
+    else:
+        exit(0)
 
 
 @cli.command()

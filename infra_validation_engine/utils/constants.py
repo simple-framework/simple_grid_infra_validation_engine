@@ -25,7 +25,7 @@ class Constants:
     PUPPET_AGENT = "/etc/puppetlabs/puppet/puppet.conf"
     STAGE_FILE = "/etc/simple_grid/.stage"
     HOST_CERT_DIR = "{SIMPLE_CONFIG_DIR}/host_certificates".format(SIMPLE_CONFIG_DIR=SIMPLE_CONFIG_DIR)
-
+    NODE_TYPE_FILE = "{SIMPLE_CONFIG_DIR}/.node_type".format(SIMPLE_CONFIG_DIR=SIMPLE_CONFIG_DIR)
 
 class ComponentRepositoryConstants(Constants):
     META_INFO_PREFIX = "meta_info_"
