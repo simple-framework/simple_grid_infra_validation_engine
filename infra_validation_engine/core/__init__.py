@@ -147,14 +147,9 @@ class Executor:
         self.name = name
         self.logger = logging.getLogger(__name__)
         self.report = OrderedDict({"executor_name": self.name, "result": ''})
-        self.infra_tests = []
         self.pipeline = []
         self.exit_code = 0
         self.hard_error_pre_condition = True
-
-    def register_infra_test(self, infra_test):
-        """ Register a test to be run by this executor """
-        self.infra_tests.append(infra_test)
 
     @abstractmethod
     def pre_condition(self):
@@ -195,7 +190,7 @@ class Executor:
 
     def execute(self):
         if not self.pre_condition_handler():
-            self.logger.error("Pre condition failed")
+            self.logger.error("Pre condition failed for Executor: {name}".format(name=self.name))
             return
         # Ready to run tests
         self.logger.info("Running Executor: {name}".format(name=self.name))
@@ -209,10 +204,10 @@ class Executor:
 
     def post_process(self):
         """ Generate Report and update Exit Code """
-        test_reports = [test.report for test in self.infra_tests]
-        self.report['total_tests'] = len(test_reports)
-        self.report['test_reports'] = test_reports
-        exit_codes = set([test.exit_code for test in self.infra_tests])
+        pipeline_reports = [element.report for element in self.pipeline]
+        self.report['total_elements'] = len(pipeline_reports)
+        self.report['element_reports'] = pipeline_reports
+        exit_codes = set([test.exit_code for test in self.pipeline])
         if self.exit_code == 4:
             self.report["result"] = "pre condition failed! "
         if 1 in exit_codes:
@@ -293,8 +288,8 @@ class Stage:
     def post_process(self):
         """ Generate report and update exit code"""
         executor_reports = [executor.report for executor in self.executors]
-        self.report['executor_reports'] = executor_reports
         self.report['total_executors'] = len(executor_reports)
+        self.report['executor_reports'] = executor_reports
         exit_codes = set([executor.exit_code for executor in self.executors])
 
         if self.exit_code == 4:

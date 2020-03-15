@@ -74,7 +74,7 @@ class ThreadPool:
 
     def add_task(self, infra_test):
         """ Add a task to the queue """
-        logger.debug("Queueing {test} on {fqdn}".format(test=infra_test.name, fqdn=infra_test.fqdn))
+        logger.debug("Queueing {task}".format(task=infra_test.name))
         self.infra_tests_q.put(infra_test)
 
     def wait_completion(self):

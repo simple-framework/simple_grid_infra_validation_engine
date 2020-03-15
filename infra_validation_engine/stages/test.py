@@ -15,20 +15,30 @@ from infra_validation_engine.components.bolt import BoltInstallationTest, BoltCo
 from infra_validation_engine.components.docker import DockerInstallationTest, DockerServiceTest, DockerImageTest, \
     DockerContainerStatusTest
 from infra_validation_engine.components.swarm import *
+
 from infra_validation_engine.components.puppet import *
 from infra_validation_engine.components.ccm import *
 
 from infra_validation_engine.core import Stage, StageType
-from infra_validation_engine.core.executors import ParallelExecutor, VerticalExecutor
+from infra_validation_engine.core.executors import VerticalExecutor, HorizontalExecutor
 from infra_validation_engine.core.standard_tests import PackageIsInstalledTest
+
+
+class TestHorizontalExecutor(HorizontalExecutor):
+    def __init__(self, host_rep):
+        HorizontalExecutor.__init__(self, "Node Package Tasks")
+        host = host_rep['host']
+        fqdn = host_rep['fqdn']
+        self.pipeline.append(PackageIsInstalledTest("Git Installation Test", "git", host, fqdn))
+        self.pipeline.append(PackageIsInstalledTest("Docker Installation Test", "docker-ce", host, fqdn))
 
 
 class TestExecutor(VerticalExecutor):
     def __init__(self, name, num_threads, cm_host_rep, lc_hosts_rep):
         VerticalExecutor.__init__(self, name, num_threads)
-        self.pipeline.append(PackageIsInstalledTest("Git", "git", cm_host_rep['host'], cm_host_rep['fqdn']))
+        self.pipeline.append(TestHorizontalExecutor(cm_host_rep))
         for lc in lc_hosts_rep:
-            self.pipeline.append(PackageIsInstalledTest("Git", "git", lc['host'], lc['fqdn']))
+            self.pipeline.append(TestHorizontalExecutor(lc))
 
 
 class Test(Stage):
