@@ -121,7 +121,8 @@ def validate(file, config_master, mode, verbose, targets, stages):
 
     if 'pre_install' in stages:
         pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, 4)
-        exit_code = pre_install_stage.execute()
+        pre_install_stage.execute()
+        exit_code = pre_install_stage.exit_code
     elif 'test' in stages:
         test_stage = Test(cm_host_rep, lc_hosts_rep)
         exit_code = test_stage.execute()

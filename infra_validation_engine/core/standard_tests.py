@@ -88,7 +88,7 @@ class SystemdServiceIsActiveTest(InfraTest):
     If service is not enabled, it is raised as a warning
     """
 
-    def __init__(self, name, service, host, fqdn, check_enabled=False):
+    def __init__(self, name, service, host, fqdn, check_enabled=True):
         if check_enabled:
             description = "Check if systemd unit {svc} is active and enabled on {fqdn}".format(svc=service, fqdn=fqdn)
         else:
@@ -118,15 +118,17 @@ class SystemdServiceIsActiveTest(InfraTest):
             self.rc = 2
             self.err = "Service {svc} is not active on {fqdn}. ".format(svc=self.svc, fqdn=self.fqdn)
             return False
+        if self.check_enabled:
+            enabled_cmd_str = "systemctl is-enabled {svc}".format(svc=self.svc)
 
-        enabled_cmd_str = "systemctl is-enabled {svc}".format(svc=self.svc)
-
-        enabled_cmd = self.host.run(enabled_cmd_str)
-        if not enabled_cmd.succeeded:
-            self.warn = True
-            self.message = "Service {svc} is not enabled on {fqdn}. Is it active? {is_active}".format(svc=self.svc,
-                                                                                                      fqdn=self.fqdn,
-                                                                                               is_active=is_active)
+            enabled_cmd = self.host.run(enabled_cmd_str)
+            if not enabled_cmd.succeeded:
+                self.warn = True
+                self.message = "Service {svc} is not enabled on {fqdn}. Is it running? {is_active}".format(
+                    svc=self.svc,
+                    fqdn=self.fqdn,
+                    is_active=is_active)
+        return True
 
     def fail(self):
         if self.rc == 1:
