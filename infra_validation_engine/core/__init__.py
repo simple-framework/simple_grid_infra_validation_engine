@@ -20,7 +20,7 @@ from collections import deque, OrderedDict
 
 class Pool:
     """
-    Manages a list of all available infra tests and the stages
+    Manages a list of all available infra tests and the stages for the CLI
     """
     tests = []
     stages = []
@@ -46,12 +46,15 @@ class Pool:
 
 
 class PipelineElement:
-    """ Pipeline elements that can be executed """
+    """
+    An executable and composable entity that represents the test pipeline and provides
+    functions to execute and log events from the test pipeline.
+    """
     __metaclass__ = ABCMeta
 
     def __init__(self, name, executable_type):
         self.name = name
-        self.type = executable_type #InfraTest, Executor, Stage, HorizontalExecutor, VerticalExecutor
+        self.type = executable_type
         self.pipeline_elements = []
         self.exit_code = 0
         self.report = OrderedDict({'name': self.name, 'result': '', 'type': self.type})
@@ -140,6 +143,7 @@ class PipelineElement:
 
 class InfraTest(PipelineElement):
     """
+    A special PipelineElement that runs the test on the InfraStructure
     Exit_Code : 1,4,8::pass,pass+warn,error #someday
     """
     __metaclass__ = ABCMeta
@@ -208,7 +212,9 @@ class InfraTest(PipelineElement):
 
 
 class Stage(PipelineElement):
-    """ Serial executor of composition of SerialExecutors, ParallelExecutors"""
+    """
+    A special pipeline element that groups other pipeline elements into a stage.
+    """
 
     __metaclass__ = ABCMeta
 

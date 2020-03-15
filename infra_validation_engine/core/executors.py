@@ -5,7 +5,7 @@ from infra_validation_engine.core.concurrency import ThreadPool
 
 class SerialExecutor(PipelineElement):
     """
-    Composed of Serial Executors, Parallel Executors and InfraTests. The pipeline is executed serially.
+    A wrapper around default behavior of PipelineElement that executes other PipelineElements serially.
     """
     def __init__(self, name):
         PipelineElement.__init__(self, name, "SerialExecutor")
@@ -14,7 +14,7 @@ class SerialExecutor(PipelineElement):
 
 class ParallelExecutor(PipelineElement):
     """
-    Composed of Serial Executors, Parallel Executors and InfraTests. The pipeline is executed serially.
+    A parallelized implementation for running a PipelineElement
     """
 
     def __init__(self, name, num_threads = 2, status_notification_interval=2):
