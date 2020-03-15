@@ -17,7 +17,7 @@ class ParallelExecutor(PipelineElement):
     A parallelized implementation for running a PipelineElement
     """
 
-    def __init__(self, name, num_threads = 2, status_notification_interval=2):
+    def __init__(self, name, num_threads=2, status_notification_interval=2):
         PipelineElement.__init__(self, name, "ParallelExecutor")
         self.pool = ThreadPool(num_threads)
         self.num_threads = num_threads
@@ -33,7 +33,6 @@ class ParallelExecutor(PipelineElement):
         parallel_elements = [x for x in self.pipeline_elements if isinstance(x, ParallelExecutor)]
         num_parallel_elements = len(parallel_elements)
         num_threads = self.num_threads if num_parallel_elements > self.num_threads else num_parallel_elements
-        # self.pool = ThreadPool(num_threads)
 
         for pipeline_element in self.pipeline_elements:
             self.pool.add_task(pipeline_element)
