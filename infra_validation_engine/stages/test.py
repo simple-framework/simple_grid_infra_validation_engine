@@ -15,20 +15,30 @@ from infra_validation_engine.components.bolt import BoltInstallationTest, BoltCo
 from infra_validation_engine.components.docker import DockerInstallationTest, DockerServiceTest, DockerImageTest, \
     DockerContainerStatusTest
 from infra_validation_engine.components.swarm import *
+
 from infra_validation_engine.components.puppet import *
 from infra_validation_engine.components.ccm import *
 
 from infra_validation_engine.core import Stage, StageType
-from infra_validation_engine.core.executors import ParallelExecutor
+from infra_validation_engine.core.executors import ParallelExecutor, SerialExecutor
 from infra_validation_engine.core.standard_tests import PackageIsInstalledTest
+
+
+class TestHorizontalExecutor(SerialExecutor):
+    def __init__(self, host_rep):
+        SerialExecutor.__init__(self, "Node Package Tasks")
+        host = host_rep['host']
+        fqdn = host_rep['fqdn']
+        self.append_to_pipeline(PackageIsInstalledTest("Git Installation Test", "git", host, fqdn))
+        self.append_to_pipeline(PackageIsInstalledTest("Docker Installation Test", "docker-ce", host, fqdn))
 
 
 class TestExecutor(ParallelExecutor):
     def __init__(self, name, num_threads, cm_host_rep, lc_hosts_rep):
         ParallelExecutor.__init__(self, name, num_threads)
-        self.register_infra_test(PackageIsInstalledTest("Git", "git", cm_host_rep['host'], cm_host_rep['fqdn']))
+        self.append_to_pipeline(TestHorizontalExecutor(cm_host_rep))
         for lc in lc_hosts_rep:
-            self.register_infra_test(PackageIsInstalledTest("Git", "git", lc['host'], lc['fqdn']))
+            self.append_to_pipeline(TestHorizontalExecutor(lc))
 
 
 class Test(Stage):
@@ -40,9 +50,9 @@ class Test(Stage):
     def pre_condition(self):
         pass
 
-    def create_test_pipeline(self):
+    def create_pipeline(self):
         executor = TestExecutor("Test Executor", 4, self.config_master_host, self.lightweight_component_hosts)
-        self.executors.append(executor)
+        self.append_to_pipeline(executor)
 
     def register_tests(self):
         pass
