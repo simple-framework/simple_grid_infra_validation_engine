@@ -54,7 +54,7 @@ host certificate copy test
 
 class PreDeployStageParallelExecutor(ParallelExecutor):
     def __init__(self, cm_rep, lc_rep, num_threads):
-        ParallelExecutor.__init__(self, "Install Parallelizer", num_threads)
+        ParallelExecutor.__init__(self, "Pre Deploy Parallelizer", num_threads)
         self.cm_rep = cm_rep
         self.lc_rep = lc_rep
         self.all_hosts = [cm_rep] + lc_rep

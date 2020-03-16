@@ -16,6 +16,7 @@ import yaml
 import click
 from infra_validation_engine.core import Pool
 from infra_validation_engine.stages.config import Config
+from infra_validation_engine.stages.deploy import Deploy
 from infra_validation_engine.stages.pre_deploy import Pre_Deploy
 from stages.pre_install import Pre_Install
 from stages.install import Install
@@ -154,6 +155,10 @@ def validate(file, config_master, identity_file, num_threads, mode, verbose, tar
         pre_deploy_stage = Pre_Deploy(cm_host_rep, lc_hosts_rep, file, num_threads)
         pre_deploy_stage.execute()
         exit_codes.append(pre_deploy_stage.exit_code)
+    if 'deploy' in stages:
+        deploy_stage = Deploy(cm_host_rep, lc_hosts_rep, file, num_threads)
+        deploy_stage.execute()
+        exit_codes.append(deploy_stage.exit_code)
 
     unique_exit_codes = set(exit_codes)
     if 1 in unique_exit_codes:
