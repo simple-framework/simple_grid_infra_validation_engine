@@ -15,19 +15,18 @@ from infra_validation_engine.core import Stage, StageType
 from infra_validation_engine.core.executors import ParallelExecutor
 from infra_validation_engine.core.standard_tests import PackageIsInstalledTest, FileIsPresentTest
 from infra_validation_engine.infra_tests.components.bolt import BoltInstallationTest, BoltConfigurationDirectoryTest, \
-    BoltConfigurationFileTest, BoltNetworkConfigurationTest
+    BoltConfigurationFileTest
 from infra_validation_engine.infra_tests.components.docker import DockerInstallationTest
 from infra_validation_engine.infra_tests.components.puppet import PuppetServerInstallationTest, PuppetFirewallPortTest, \
-    SimplePuppetEnvTest
+    SimplePuppetEnvTest, PuppetConfTest, PuppetServerServiceTest, PuppetFileServerConfTest, PuppetCertTest
 from infra_validation_engine.utils.constants import Constants
 
 
 class BoltValidator(ParallelExecutor):
-    def __init__(self, cm_rep, lc_rep, num_threads):
+    def __init__(self, cm_rep, num_threads):
         ParallelExecutor.__init__(self, "Bolt Validator", num_threads)
         self.host = cm_rep['host']
         self.fqdn = cm_rep['fqdn']
-        self.lc_rep = lc_rep
         self.create_pipeline()
 
     def create_pipeline(self):
@@ -35,7 +34,6 @@ class BoltValidator(ParallelExecutor):
             BoltInstallationTest(self.host, self.fqdn),
             BoltConfigurationDirectoryTest(self.host, self.fqdn),
             BoltConfigurationFileTest(self.host, self.fqdn),
-            BoltNetworkConfigurationTest(self.host, self.fqdn, self.lc_rep)
         ])
 
 
@@ -73,22 +71,29 @@ class InstallStageParallelExecutor(ParallelExecutor):
     def create_pipeline(self):
         self.extend_pipeline([
             PuppetServerInstallationTest(self.host, self.fqdn),
+            PuppetServerServiceTest(self.host, self.fqdn),
+            PuppetFileServerConfTest(self.host, self.fqdn),
             GitAndDockerInstallationValidator(self.all_hosts, self.num_threads),
             SimplePuppetEnvTest(self.host, self.fqdn),
             PuppetFirewallPortTest(self.host, self.fqdn),
-            BoltValidator(self.cm_rep, self.lc_rep, self.num_threads)
+            BoltValidator(self.cm_rep, self.num_threads)
         ])
         for node in self.all_hosts:
-            self.append_to_pipeline(
-                FileIsPresentTest("SIMPLE node_type file Test for {fqdn}".format(fqdn=node['fqdn']),
+            self.extend_pipeline([
+                FileIsPresentTest("SIMPLE node_type file test for {fqdn}".format(fqdn=node['fqdn']),
                                   Constants.NODE_TYPE_FILE,
                                   node['host'],
                                   node['fqdn']
-                                  )
-            )
+                                  ),
+                PuppetConfTest(self.host, node['host'], node['fqdn'])
+            ])
+
+        for lc in self.lc_rep:
+            self.append_to_pipeline(PuppetCertTest(lc['fqdn'], self.host, self.fqdn))
 
 
 class Install(Stage):
+    """ Everything until signing of certificates """
     __metaclass__ = StageType
 
     def __init__(self, cm_rep, lc_rep, num_threads):

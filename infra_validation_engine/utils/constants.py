@@ -20,7 +20,9 @@ class Constants:
     GIT_PKG_NAME = "git"
     SITE_LEVEL_CONFIG_FILE = "/etc/simple_grid/site_config/site_level_config_file.yaml"
     FILESERVER_CONFIG_FILE = "/etc/puppetlabs/puppet/fileserver.conf"
-    SSH_HOST_KEY = "/etc/ssh/simple_host_key.pub"
+    SIMPLE_SSH_PUB_KEY = "/etc/ssh/simple_host_key.pub"
+    SIMPLE_SSH_KEY = "/etc/ssh/simple_host_key"
+    SIMPLE_SSH_KEY_FILESERVER = "{SIMPLE_CONFIG_DIR}/simple_host_key.pub".format(SIMPLE_CONFIG_DIR=SIMPLE_CONFIG_DIR)
     SITE_MANIFEST = "/etc/puppetlabs/code/environments/simple/manifests/site.pp"
     PUPPET_AGENT = "/etc/puppetlabs/puppet/puppet.conf"
     STAGE_FILE = "/etc/simple_grid/.stage"
