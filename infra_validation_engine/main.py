@@ -16,6 +16,7 @@ import yaml
 import click
 from infra_validation_engine.core import Pool
 from infra_validation_engine.stages.config import Config
+from infra_validation_engine.stages.pre_deploy import Pre_Deploy
 from stages.pre_install import Pre_Install
 from stages.install import Install
 from stages.test import Test
@@ -132,6 +133,11 @@ def validate(file, config_master, identity_file, num_threads, mode, verbose, tar
     for host_rep in all_hosts_rep[1:]:
         add_testinfra_host(host_rep)
     exit_codes = []
+
+    if 'test' in stages:
+        test_stage = Test(cm_host_rep, lc_hosts_rep)
+        exit_code = test_stage.execute()
+        exit(exit_code)
     if 'pre_install' in stages:
         pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, file, identity_file, num_threads)
         pre_install_stage.execute()
@@ -144,9 +150,11 @@ def validate(file, config_master, identity_file, num_threads, mode, verbose, tar
         config_stage = Config(cm_host_rep, lc_hosts_rep, num_threads)
         config_stage.execute()
         exit_codes.append(config_stage.exit_code)
-    if 'test' in stages:
-        test_stage = Test(cm_host_rep, lc_hosts_rep)
-        exit_code = test_stage.execute()
+    if 'pre_deploy' in stages:
+        pre_deploy_stage = Pre_Deploy(cm_host_rep, lc_hosts_rep, file, num_threads)
+        pre_deploy_stage.execute()
+        exit_codes.append(pre_deploy_stage.exit_code)
+
     unique_exit_codes = set(exit_codes)
     if 1 in unique_exit_codes:
         exit(1)

@@ -1,4 +1,3 @@
-# coding: utf-8
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,7 +13,7 @@
 from infra_validation_engine.core import InfraTestType, InfraTest
 from infra_validation_engine.core.standard_tests import FileIsPresentTest
 from infra_validation_engine.utils.constants import Constants
-
+import re
 
 class SwarmConstants(Constants):
     SWARM_NETWORK = "simple"
@@ -26,6 +25,14 @@ class SwarmConstants(Constants):
 class SwarmOverlayNetworkError(Exception):
     """ Raised if swarm overlay network was not found or there was an error with ingress network"""
     pass
+
+
+class SwarmMissingNodeError(Exception):
+    """ Raised if some nodes have not joined the cluster """
+
+
+class SwarmClusterError(Exception):
+    """ Raised if status of cluster cannot be determined"""
 
 
 class SwarmDNSFileTest(FileIsPresentTest):
@@ -93,11 +100,46 @@ class SwarmSimpleOverlayNetworkTest(SwarmOverlayNetworkTest):
         SwarmOverlayNetworkTest.__init__(self, SwarmConstants.SWARM_NETWORK, host, fqdn)
 
 
-# class SwarmMembershipTest(InfraTest):
-#     """
-#     Test if a node is part of swarm
-#     """
-#     __metaclass__ = InfraTestType
-#
-#     def __init__(self, host, fqdn):
-#         InfraTest.__init__()
+class SwarmMembershipTest(InfraTest):
+    """
+    Test if a node is part of swarm
+    """
+    __metaclass__ = InfraTestType
+
+    def __init__(self, host, fqdn, nodes):
+        InfraTest.__init__(self,
+                           "Swarm Membership Test",
+                           "Test if swarm consists of the following nodes: {nodes}".format(nodes=nodes),
+                           host,
+                           fqdn)
+        self.expected_nodes = set(nodes)
+
+    def run(self):
+        cmd_str = "docker node ls"
+        cmd = self.host.run(cmd_str)
+        self.rc = cmd.rc
+        actual_nodes = set()
+        if self.rc == 0:
+            for node_info in cmd.stdout.split('\n')[1:]:
+                node_info = str(node_info).split()
+                if not len(node_info) > 0:
+                    continue
+                if '*' in node_info:
+                    actual_nodes.add(node_info[2])
+                else:
+                    actual_nodes.add(node_info[1])
+            missing_nodes = self.expected_nodes - actual_nodes
+            self.err = missing_nodes
+            return len(missing_nodes) == 0
+        return False
+
+    def fail(self):
+        if self.rc == 0:
+            err_msg = "The following nodes have not joined the Swarm Cluster: {missing}".format(
+                missing=', '.join(self.err))
+            raise SwarmMissingNodeError(err_msg)
+        else:
+            err_msg = "Failed to determine status of swarm cluster. 'docker node ls' on {fqdn} exited with {code}".format(
+                fqdn=self.fqdn, code=self.rc
+            )
+            raise SwarmClusterError(err_msg)
