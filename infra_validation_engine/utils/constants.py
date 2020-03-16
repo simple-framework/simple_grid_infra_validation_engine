@@ -28,6 +28,8 @@ class Constants:
     STAGE_FILE = "/etc/simple_grid/.stage"
     HOST_CERT_DIR = "{SIMPLE_CONFIG_DIR}/host_certificates".format(SIMPLE_CONFIG_DIR=SIMPLE_CONFIG_DIR)
     NODE_TYPE_FILE = "{SIMPLE_CONFIG_DIR}/.node_type".format(SIMPLE_CONFIG_DIR=SIMPLE_CONFIG_DIR)
+    AUGMENTED_SITE_LEVEL_CONFIG_FILE = "{SIMPLE_CONFIG_DIR}/site_config/augmented_site_level_config_file.yaml".format(
+        SIMPLE_CONFIG_DIR=SIMPLE_CONFIG_DIR)
 
 class ComponentRepositoryConstants(Constants):
     META_INFO_PREFIX = "meta_info_"
