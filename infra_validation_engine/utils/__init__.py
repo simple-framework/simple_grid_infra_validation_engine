@@ -35,8 +35,8 @@ def get_lightweight_component_hosts(augmented_site_level_config):
     return output
 
 
-def add_testinfra_host(host_rep):
-    host_rep['host'] = testinfra.get_host(host_rep['host_str'])
+def add_testinfra_host(host_rep, ssh_key):
+    host_rep['host'] = testinfra.get_host(host_rep['host_str'], ssh_identity_file=ssh_key)
 
 
 def get_host_representation(fqdn, ip_address=None):

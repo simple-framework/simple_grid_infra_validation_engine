@@ -130,9 +130,9 @@ def validate(file, config_master, identity_file, num_threads, mode, verbose, tar
     logger.info("Infra Validation Tests will be executed on the following hosts:")
     map(lambda x: logger.info(x['fqdn']), all_hosts_rep)
 
-    add_testinfra_host(cm_host_rep)
+    add_testinfra_host(cm_host_rep, ssh_key=identity_file)
     for host_rep in all_hosts_rep[1:]:
-        add_testinfra_host(host_rep)
+        add_testinfra_host(host_rep, ssh_key=identity_file)
     exit_codes = []
 
     if 'test' in stages:
