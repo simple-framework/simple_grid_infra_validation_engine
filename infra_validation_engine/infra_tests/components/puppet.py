@@ -22,6 +22,10 @@ class PuppetModuleNotInstalledError(Exception):
     pass
 
 
+class PuppetCertificateError(Exception):
+    pass
+
+
 class PuppetAgentInstallationTest(PackageIsInstalledTest):
     """Puppet agent package is installed Test"""
     __metaclass__ = InfraTestType
@@ -120,9 +124,48 @@ class PuppetFileServerConfTest(FileIsPresentTest):
 
 class PuppetFirewallPortTest(CommandExecutionTest):
     """ Check if port 8140 is open """
+    __metaclass__ = InfraTestType
+
     def __init__(self, host, fqdn):
         CommandExecutionTest.__init__(self, "Puppet Server Firewall Test",
                                       "iptables -L | grep {port}".format(port=PuppetConstants.PUPPET_PORT),
                                       "Check if port {port} config exists in iptables".format(port=PuppetConstants.PUPPET_PORT),
                                       host,
                                       fqdn)
+
+
+class PuppetCertTest(InfraTest):
+    """
+    Check if certificates have been signed and are present
+    """
+    __metaclass__ = InfraTestType
+
+    def __init__(self, node, host, fqdn):
+        InfraTest.__init__(self,
+                           "Puppet Certificate Test: {node}".format(node=node),
+                           "Checks is the Puppet Certificates are present and have been signed for {node}"
+                           .format(node=node),
+                           host,
+                           fqdn)
+        self.node = node
+
+    def run(self):
+        cmd_str = "puppet cert list {node}".format(node=self.node)
+        cmd = self.host.run(cmd_str)
+        self.rc = cmd.rc
+        self.out = cmd.stdout
+        self.err = cmd.stderr
+        if cmd.rc == 0:
+            cert_elements = self.out.split(' ')
+            cert = cert_elements[-1]
+            if cert_elements[0] == '+':
+                self.message = "{node} has a valid puppet cert: {cert} ".format(node=self.node, cert=cert)
+            else:
+                self.warn = True
+                self.message = "Puppet certificate of {node} has not been signed. Please sign the following " \
+                               "certificate: {cert}".format(node=self.node, cert=cert)
+        return cmd.rc == 0
+
+    def fail(self):
+        err_msg = "Could not find puppet certificate for {node}".format(node=self.node)
+        raise PuppetCertificateError(err_msg)

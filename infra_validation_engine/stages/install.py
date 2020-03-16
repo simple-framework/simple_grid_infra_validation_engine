@@ -25,7 +25,7 @@ from infra_validation_engine.utils.constants import Constants
 class BoltValidator(ParallelExecutor):
     def __init__(self, cm_rep, lc_rep, num_threads):
         ParallelExecutor.__init__(self, "Bolt Validator", num_threads)
-        self.host=cm_rep['host']
+        self.host = cm_rep['host']
         self.fqdn = cm_rep['fqdn']
         self.lc_rep = lc_rep
         self.create_pipeline()
@@ -102,25 +102,3 @@ class Install(Stage):
         self.extend_pipeline([
             InstallStageParallelExecutor(self.cm_rep, self.lc_rep, self.num_threads)
         ])
-    # def register_tests(self):
-    #     self.infra_tests.extend([
-    #         YamlCompilerInstallationTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #         # Config Master Tests
-    #         ConfigMasterSimpleGridFolderTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #         ConfigMasterGitInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #         ConfigMasterDockerInstalledTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #         ConfigMasterSiteLevelConfigFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #         ConfigMasterFileServerConfigFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #         ConfigMasterSSHHostKeyFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #         ConfigMasterSiteManifestFileTest(self.config_master_host['host'], self.config_master_host['fqdn']),
-    #     ])
-    #     # Lightweight Component Tests
-    #     for lc in self.lightweight_component_hosts:
-    #         self.infra_tests.append(
-    #             LightweightComponentPuppetAgentUpdatedTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
-    #         self.infra_tests.append(
-    #             LightweightComponentHostkeyTest(lc['host'], lc['fqdn'], self.config_master_host['host']))
-    #
-    #     # Check if stage is changed to CONFIG
-    #     self.infra_tests.append(
-    #         ConfigMasterConfigStageSetTest(self.config_master_host['host'], self.config_master_host['fqdn']))
