@@ -107,7 +107,7 @@ def validate(file, config_master, identity_file, num_threads, mode, verbose, tar
     exit_code = 1
 
     if targets is not None:
-        hostnames = [x.strip() for x in targets.split(',')]
+        hostnames = [x.strip() for x in targets.split(',') if len(x.strip()) > 0]
         lc_hosts_rep = [get_host_representation(x) for x in hostnames]
     else:
         logger.debug("No targets were explicitly specified to execute the tests. Using augmented_site_level_config "
