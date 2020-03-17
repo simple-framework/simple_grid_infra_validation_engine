@@ -140,11 +140,11 @@ def validate(file, config_master, identity_file, num_threads, mode, verbose, tar
         exit_code = test_stage.execute()
         exit(exit_code)
     if 'pre_install' in stages:
-        pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, file, identity_file, num_threads)
+        pre_install_stage = Pre_Install(cm_host_rep, lc_hosts_rep, identity_file, num_threads)
         pre_install_stage.execute()
         exit_codes.append(pre_install_stage.exit_code)
     if 'install' in stages:
-        install_stage = Install(cm_host_rep, lc_hosts_rep, num_threads)
+        install_stage = Install(cm_host_rep, lc_hosts_rep, file, num_threads)
         install_stage.execute()
         exit_codes.append(install_stage.exit_code)
     if 'config' in stages:

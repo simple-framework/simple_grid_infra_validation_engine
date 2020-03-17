@@ -136,7 +136,7 @@ class DockerContainerStatusTest(InfraTest):
         self.cmd_str = ""
 
     def run(self):
-        cmd_str = "docker inspect -f '{{.State.Running}}' {container}".format(container=self.container)
+        cmd_str = "docker inspect -f '{{.State.Running}}' " + "{container}".format(container=self.container)
         cmd = self.host.run(cmd_str)
         self.rc = cmd.rc
         self.err = cmd.stderr

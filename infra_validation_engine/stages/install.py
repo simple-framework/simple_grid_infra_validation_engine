@@ -10,8 +10,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import yaml
 
-from infra_validation_engine.core import Stage, StageType
+from infra_validation_engine.core import Stage, StageType, PreConditionNotSatisfiedError
 from infra_validation_engine.core.executors import ParallelExecutor
 from infra_validation_engine.core.standard_tests import PackageIsInstalledTest, FileIsPresentTest
 from infra_validation_engine.infra_tests.components.bolt import BoltInstallationTest, BoltConfigurationDirectoryTest, \
@@ -19,7 +20,7 @@ from infra_validation_engine.infra_tests.components.bolt import BoltInstallation
 from infra_validation_engine.infra_tests.components.docker import DockerInstallationTest
 from infra_validation_engine.infra_tests.components.puppet import PuppetServerInstallationTest, PuppetFirewallPortTest, \
     SimplePuppetEnvTest, PuppetConfTest, PuppetServerServiceTest, PuppetFileServerConfTest, PuppetCertTest
-from infra_validation_engine.utils.constants import Constants
+from infra_validation_engine.utils.constants import Constants, ComponentRepositoryConstants
 
 
 class BoltValidator(ParallelExecutor):
@@ -55,16 +56,18 @@ class GitAndDockerInstallationValidator(ParallelExecutor):
 class InstallStageParallelExecutor(ParallelExecutor):
     """
     Stage is serial executor by default, we need to insert a parallel
-    executor for pre_install given the nature of tests
+    executor for install given the nature of tests
     """
 
-    def __init__(self, cm_rep, lc_rep, num_threads):
+    def __init__(self, cm_rep, lc_rep, host_cert_dirs, hooks, num_threads):
         ParallelExecutor.__init__(self, "Install Parallelizer", num_threads)
         self.cm_rep = cm_rep
         self.lc_rep = lc_rep
         self.all_hosts = [cm_rep] + lc_rep
         self.host = cm_rep['host']
         self.fqdn = cm_rep['fqdn']
+        self.host_cert_dirs = host_cert_dirs
+        self.hooks = hooks
         self.num_threads = num_threads
         self.create_pipeline()
 
@@ -91,19 +94,81 @@ class InstallStageParallelExecutor(ParallelExecutor):
         for lc in self.lc_rep:
             self.append_to_pipeline(PuppetCertTest(lc['fqdn'], self.host, self.fqdn))
 
+        for cert_dir in self.host_cert_dirs:
+            self.extend_pipeline([
+                FileIsPresentTest("Host Certificate Test: {dir}".format(dir=cert_dir),
+                                  "{dir}/hostcert.pem".format(dir=cert_dir),
+                                  self.host,
+                                  self.fqdn
+                                  ),
+                FileIsPresentTest("Host Certificate Test: {dir}".format(dir=cert_dir),
+                                  "{dir}/hostkey.pem".format(dir=cert_dir),
+                                  self.host,
+                                  self.fqdn
+                                  )
+            ])
+        for hook in self.hooks:
+            self.append_to_pipeline(
+                FileIsPresentTest("Lifecycle Hook Test: {path}".format(path=hook),
+                                  hook,
+                                  self.host,
+                                  self.fqdn
+                                  )
+            )
+
 
 class Install(Stage):
     """ Everything until signing of certificates """
     __metaclass__ = StageType
 
-    def __init__(self, cm_rep, lc_rep, num_threads):
+    def __init__(self, cm_rep, lc_rep, augmented_site_level_config_file, num_threads):
         Stage.__init__(self, "Install")
         self.cm_rep = cm_rep
         self.lc_rep = lc_rep
         self.num_threads = num_threads
+        self.augmented_site_level_config_file = augmented_site_level_config_file
+        self.augmented_site_level_config = None
+        self.host_cert_dirs = []
+        self.hooks = []
+
+    def pre_condition(self):
+        try:
+            with open(self.augmented_site_level_config_file, 'r') as augmented_site_level_config_file:
+                self.augmented_site_level_config = yaml.safe_load(augmented_site_level_config_file)
+        except Exception:
+            raise PreConditionNotSatisfiedError("Could not read augmented site level config file from {path}"
+                                                .format(path=self.augmented_site_level_config_file))
         self.create_pipeline()
 
     def create_pipeline(self):
+        self.parse_augmented_site_config()
         self.extend_pipeline([
-            InstallStageParallelExecutor(self.cm_rep, self.lc_rep, self.num_threads)
+            InstallStageParallelExecutor(self.cm_rep, self.lc_rep, self.host_cert_dirs, self.hooks, self.num_threads)
         ])
+
+    def parse_augmented_site_config(self):
+        lcs = self.augmented_site_level_config['lightweight_components']
+        for lc in lcs:
+            name = lc['name'].lower()
+            fqdn = lc['deploy']['node']
+            meta_info_header = "{prefix}{name}".format(
+                prefix=ComponentRepositoryConstants.META_INFO_PREFIX,
+                name=name
+            )
+            if meta_info_header in self.augmented_site_level_config:
+                meta_info = self.augmented_site_level_config[meta_info_header]
+                if "host_requirements" in meta_info:
+                    host_requirements = meta_info["host_requirements"]
+                    if "host_certificates" in host_requirements:
+                        if host_requirements['host_certificates'] is True:
+                            self.host_cert_dirs.append("{host_cert_dir}/{fqdn}"
+                                                       .format(host_cert_dir=ComponentRepositoryConstants.HOST_CERT_DIR,
+                                                               fqdn=fqdn))
+            if "lifecycle_hooks" in lc:
+                hooks = lc['lifecycle_hooks']
+                if "pre_config" in hooks:
+                    self.hooks.extend(hooks['pre_config'])
+                if "pre_init" in hooks:
+                    self.hooks.extend(hooks['pre_init'])
+                if "post_init" in hooks:
+                    self.hooks.extend(hooks['post_init'])
