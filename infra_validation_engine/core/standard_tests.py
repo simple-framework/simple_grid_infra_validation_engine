@@ -88,7 +88,7 @@ class SystemdServiceIsActiveTest(InfraTest):
     If service is not enabled, it is raised as a warning
     """
 
-    def __init__(self, name, service, host, fqdn, check_enabled=True):
+    def __init__(self, name, service, host, fqdn, check_enabled=False):
         if check_enabled:
             description = "Check if systemd unit {svc} is active and enabled on {fqdn}".format(svc=service, fqdn=fqdn)
         else:
