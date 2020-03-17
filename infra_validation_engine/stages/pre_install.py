@@ -95,7 +95,6 @@ class PuppetValidator(ParallelExecutor):
         for node in self.all_hosts:
             self.extend_pipeline([
                 PuppetAgentInstallationTest(node['host'], node['fqdn']),
-                PuppetServiceTest(node['host'], node['fqdn']),
                 PuppetModuleTest(node['host'], node['fqdn'])
             ])
 

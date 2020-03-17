@@ -19,7 +19,8 @@ from infra_validation_engine.infra_tests.components.bolt import BoltInstallation
     BoltConfigurationFileTest
 from infra_validation_engine.infra_tests.components.docker import DockerInstallationTest
 from infra_validation_engine.infra_tests.components.puppet import PuppetServerInstallationTest, PuppetFirewallPortTest, \
-    SimplePuppetEnvTest, PuppetConfTest, PuppetServerServiceTest, PuppetFileServerConfTest, PuppetCertTest
+    SimplePuppetEnvTest, PuppetConfTest, PuppetServerServiceTest, PuppetFileServerConfTest, PuppetCertTest, \
+    PuppetServiceTest
 from infra_validation_engine.utils.constants import Constants, ComponentRepositoryConstants
 
 
@@ -88,7 +89,8 @@ class InstallStageParallelExecutor(ParallelExecutor):
                                   node['host'],
                                   node['fqdn']
                                   ),
-                PuppetConfTest(self.host, node['host'], node['fqdn'])
+                PuppetConfTest(self.host, node['host'], node['fqdn']),
+                PuppetServiceTest(node['host'], node['fqdn']),
             ])
 
         for lc in self.lc_rep:
