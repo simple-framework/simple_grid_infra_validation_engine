@@ -15,6 +15,7 @@ from infra_validation_engine.core.standard_tests import FileIsPresentTest
 from infra_validation_engine.utils.constants import Constants
 import re
 
+
 class SwarmConstants(Constants):
     SWARM_NETWORK = "simple"
     DNS_FILE = "{simple_config}/.dns.yaml".format(simple_config=Constants.SIMPLE_CONFIG_DIR)
@@ -60,6 +61,7 @@ class SwarmOverlayNetworkTest(InfraTest):
     """
     Test if swarm overlay network is present on host
     """
+
     def __init__(self, network, host, fqdn):
         InfraTest.__init__(self, "Swarm Overlay Network Test",
                            "Check of docker network {network} is present on {fqdn}".format(
@@ -119,6 +121,7 @@ class SwarmMembershipTest(InfraTest):
         cmd = self.host.run(cmd_str)
         self.rc = cmd.rc
         actual_nodes = set()
+        missing_nodes = []
         if self.rc == 0:
             for node_info in cmd.stdout.split('\n')[1:]:
                 node_info = str(node_info).split()
@@ -128,7 +131,13 @@ class SwarmMembershipTest(InfraTest):
                     actual_nodes.add(node_info[2])
                 else:
                     actual_nodes.add(node_info[1])
-            missing_nodes = self.expected_nodes - actual_nodes
+            for node in actual_nodes:
+                found = False
+                for ref in self.expected_nodes:
+                    if node in ref or ref in node:
+                        found = True
+                if not found:
+                    missing_nodes.append(node)
             self.err = missing_nodes
             return len(missing_nodes) == 0
         return False
