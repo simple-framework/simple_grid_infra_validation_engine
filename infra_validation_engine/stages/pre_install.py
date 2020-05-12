@@ -18,6 +18,7 @@ from infra_validation_engine.core.executors import ParallelExecutor, SerialExecu
 from infra_validation_engine.core.standard_tests import PingTest, SSHTest, FileIsPresentTest
 from infra_validation_engine.infra_tests.components.puppet import PuppetAgentInstallationTest, PuppetServiceTest, \
     PuppetServerInstallationTest, PuppetModuleTest
+from infra_validation_engine.infra_tests.nodes import SELinuxTest
 from infra_validation_engine.utils.constants import ComponentRepositoryConstants
 
 
@@ -63,6 +64,27 @@ class ClusterWideDNSChecker(ParallelExecutor):
                          node_pair[0]['host'],
                          node_pair[0]['fqdn']
                          )
+            )
+
+
+class SELinuxValidator(ParallelExecutor):
+    def __init__(self, cm_rep, lc_rep, num_threads):
+        ParallelExecutor.__init__(self, "SELinux Validator", num_threads)
+        self.cm_rep = cm_rep
+        self.cm_rep['fqdn'] = socket.getfqdn()
+        self.lc_rep = lc_rep
+        self.node_reps = [cm_rep] + lc_rep
+        self.create_pipeline()
+
+    def create_pipeline(self):
+        for node_rep in self.node_reps:
+            self.append_to_pipeline(
+                SELinuxTest("SELinux Disabled Test on {fqdn}".format(fqdn=node_rep['fqdn']),
+                            "disabled",
+                            "Check if SELinux is disabled on {fqdn}".format(fqdn=node_rep['fqdn']),
+                            node_rep['host'],
+                            node_rep['fqdn']
+                            )
             )
 
 
@@ -120,6 +142,7 @@ class PreInstallParallelExecutor(ParallelExecutor):
             NetworkValidator(self.cm_rep, self.lc_rep, self.key, self.num_threads),
             PuppetValidator(self.cm_rep, self.lc_rep, self.num_threads),
             PuppetServerInstallationTest(self.host, self.fqdn),
+            SELinuxValidator(self.cm_rep, self.lc_rep, self.num_threads),
             FileIsPresentTest("Site Level Config File Test",
                               "{site_config}".format(site_config=ComponentRepositoryConstants.SITE_LEVEL_CONFIG_FILE),
                               self.host,
@@ -141,4 +164,3 @@ class Pre_Install(Stage):
     def create_pipeline(self):
         self.append_to_pipeline(PreInstallParallelExecutor(self.cm_rep, self.lc_rep,
                                                            self.key, self.num_threads))
-

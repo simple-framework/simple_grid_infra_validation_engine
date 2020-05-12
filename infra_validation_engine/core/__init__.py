@@ -193,6 +193,7 @@ class InfraTest(PipelineElement):
                                                                                   fqdn=self.fqdn, details=ex.message))
                     self.logger.info("{log_str} {error} occurred!!".format(log_str=log_str, error=type(ex)),
                                      exc_info=True)
+                    self.report['result'] = "fail"
                     self.report["error"] = ex.message
                     self.report["trace"] = traceback.format_exc()
         except Exception as ex:
